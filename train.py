@@ -19,7 +19,7 @@ from datetime import datetime
 from PIL import Image
 
 
-def train(model, optimizer, epochs=1, backup_after_epoch=True):
+def train(model, optimizer, device, epochs=1, backup_after_epoch=True):
   """
   Trains the specified model and prints the progress
   
