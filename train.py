@@ -14,7 +14,6 @@ import torchvision.transforms as T
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import sampler
-from google.colab import drive
 from glob import glob
 from datetime import datetime
 from PIL import Image
