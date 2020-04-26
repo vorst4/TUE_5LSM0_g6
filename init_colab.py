@@ -1,3 +1,24 @@
+import os
+import time
+import json
+import shutil
+import importlib
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision.datasets as dset
+import torchvision.transforms as T
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from torch.utils.data import sampler
+from google.colab import drive
+from glob import glob
+from datetime import datetime
+from PIL import Image
+
+
 def init_colab():
   """
   Initializes colab by 
@@ -17,46 +38,45 @@ def init_colab():
     (None)
   """
 
-  # Do nothing if test folder already exists
-  if os.path.exists('ISIC_2019_Test_Input'):
-    return
+  _import('test')
+
+  # # Do nothing if test folder already exists
+  # if os.path.exists('ISIC_2019_Test_Input'):
+  #   return
 
   # mount google drive
   print('\nMounting Google Drive...')
   drive.mount('/content/drive')
   print('...Done')
 
-  # Extract train and test data from drive
-  #   copy data.zip from Google Drive to workfolder .
-  print('\nCopying data.zip to workfolder...')
-  !cp 'drive/My Drive/5LSM0-final-assignment/data.zip' .
-  print('...Done')
-  #   unpack data.zip
-  print('\nUnpacking data.zip...')
-  !unzip -q data.zip
-  print('...Done')
-  #   remove data.zip
-  print('\nRemoving data.zip...')
-  !rm data.zip
-  print('...Done')
+  # # Extract train and test data from drive
+  # #   copy data.zip from Google Drive to workfolder .
+  # print('\nCopying data.zip to workfolder...')
+  # !cp 'drive/My Drive/5LSM0-final-assignment/data.zip' .
+  # print('...Done')
+  # #   unpack data.zip
+  # print('\nUnpacking data.zip...')
+  # !unzip -q data.zip
+  # print('...Done')
+  # #   remove data.zip
+  # print('\nRemoving data.zip...')
+  # !rm data.zip
+  # print('...Done')
 
   # setup git
   print('\nSetting up git...')
   #   load github.json
   with open('/content/drive/My Drive/github.json', 'r') as json_file:
     gitconfig = json.load(json_file)
-  #   clone git repo using <username> and <key>
+  #   link <username> and <key> to repo
   url = 'https://'+gitconfig["username"]+':'+gitconfig["key"]+'@github.com/vorst4/TUE_5LSM0_g6.git'
-  !git clone {url}
+  os.system('git -C TUE_5LSM0_g6 remote set-url origin ' + url)
   #   move to git directory and set <username> and <email>
-  %cd /content/TUE_5LSM0_g6
-  !git config user.name {gitconfig["username"]}
-  !git config user.email {gitconfig["email"]}
-  !git config -l
-  %cd /content/
+  os.system('git -C TUE_5LSM0_g6 config user.name '+gitconfig["username"])
+  os.system('git -C TUE_5LSM0_g6 config user.email '+gitconfig["email"])
   print('...Done')
 
-  # remove default sample_data folder, since it is unrelated to this project.
-  print('\nRemoving sample_data...')
-  !rm -r sample_data
-  print('...Done')
+  # # remove default sample_data folder, since it is unrelated to this project.
+  # print('\nRemoving sample_data...')
+  # !rm -r sample_data
+  # print('...Done')
