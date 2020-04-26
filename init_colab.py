@@ -38,30 +38,28 @@ def init_colab():
     (None)
   """
 
-  _import('test')
-
-  # # Do nothing if test folder already exists
-  # if os.path.exists('ISIC_2019_Test_Input'):
-  #   return
+  # Do nothing if test folder already exists
+  if os.path.exists('ISIC_2019_Test_Input'):
+    return
 
   # mount google drive
   print('\nMounting Google Drive...')
   drive.mount('/content/drive')
   print('...Done')
 
-  # # Extract train and test data from drive
-  # #   copy data.zip from Google Drive to workfolder .
-  # print('\nCopying data.zip to workfolder...')
-  # !cp 'drive/My Drive/5LSM0-final-assignment/data.zip' .
-  # print('...Done')
-  # #   unpack data.zip
-  # print('\nUnpacking data.zip...')
-  # !unzip -q data.zip
-  # print('...Done')
-  # #   remove data.zip
-  # print('\nRemoving data.zip...')
-  # !rm data.zip
-  # print('...Done')
+  # Extract train and test data from drive
+  #   copy data.zip from Google Drive to workfolder .
+  print('\nCopying data.zip to workfolder...')
+  os.system("cp 'drive/My Drive/5LSM0-final-assignment/data.zip' .")
+  print('...Done')
+  #   unpack data.zip
+  print('\nUnpacking data.zip...')
+  os.system('unzip -q data.zip')
+  print('...Done')
+  #   remove data.zip
+  print('\nRemoving data.zip...')
+  os.system('rm data.zip')
+  print('...Done')
 
   # setup git
   print('\nSetting up git...')
@@ -76,7 +74,11 @@ def init_colab():
   os.system('git -C TUE_5LSM0_g6 config user.email '+gitconfig["email"])
   print('...Done')
 
-  # # remove default sample_data folder, since it is unrelated to this project.
-  # print('\nRemoving sample_data...')
-  # !rm -r sample_data
-  # print('...Done')
+  # remove default sample_data folder, since it is unrelated to this project.
+  print('\nRemoving sample_data...')
+  os.system('rm -r sample_data')
+  print('...Done')
+
+  # check if GPU is enabled
+  if torch.cuda.is_available() == False:
+    print('\nWARNING: GPU is not enabled !!!')
