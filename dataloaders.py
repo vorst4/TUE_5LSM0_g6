@@ -76,13 +76,14 @@ def dataloaders(root='/content/',
   sampler_val = sampler.SubsetRandomSampler(range(N_train, N))
 
   # dataloaders
-  dl_train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
-  dl_val = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_val)
-  dl_test = DataLoader(dataset_test, batch_size=batch_size)
+  dl = type('DataLoaders', (), {})()
+  dl.train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
+  dl.val = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_val)
+  dl.test = DataLoader(dataset_test, batch_size=batch_size)
 
   # add bool to see if certain dataset is the training dataset
-  dl_train.dataset.train = True
-  dl_val.dataset.train = True
-  dl_test.dataset.train = False
+  dl.train.dataset.train = True
+  dl.val.dataset.train = True
+  dl.test.dataset.train = False
 
-  return dl_train, dl_val, dl_test, N_train, N_val, N_test
+  return dl, N_train, N_val, N_test

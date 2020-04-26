@@ -19,7 +19,7 @@ from datetime import datetime
 from PIL import Image
 
 
-def train(model, optimizer, device, epochs=1, backup_after_epoch=True):
+def train(model, optimizer, dl, S):
   """
   Trains the specified model and prints the progress
   
@@ -31,18 +31,18 @@ def train(model, optimizer, device, epochs=1, backup_after_epoch=True):
   Returns:
     (none)
   """
-  model = model.to(device=device)  # move the model parameters to CPU/GPU
+  model = model.to(device=S.device)  # move the model parameters to CPU/GPU
   model.loss = []
   model.acc_val = []
   model.acc_test = []
   model.elapsed_time = []
   time_start = time.clock()
       
-  for e in range(epochs):
-    for t, (x, y) in enumerate(dl_train):
+  for e in range(S.epochs):
+    for t, (x, y) in enumerate(dl.train):
       model.train()  # put model to training mode
-      x = x.to(device=device, dtype=dtype)  # move to device, e.g. GPU
-      y = y.to(device=device, dtype=torch.long)
+      x = x.to(device=S.device, dtype=S.dtype)  # move to device, e.g. GPU
+      y = y.to(device=S.device, dtype=torch.long)
       scores = model(x)
       loss = F.cross_entropy(scores, y)
       
@@ -60,9 +60,9 @@ def train(model, optimizer, device, epochs=1, backup_after_epoch=True):
       model.loss.append(loss)
 
       # update plot
-      if t % print_every == 0:
+      if t % S.print_every == 0:
         time_elapsed = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
-        stri = get_accuracy(dl_val, model)
+        stri = accuracy(dl.val, model)
         print('Iteration %d, loss = %.4f, time = %s, %s' % (t, loss.item(), time_elapsed, stri))
         
 
