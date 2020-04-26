@@ -1,203 +1,246 @@
-
-import os
-import time
-import json
-import shutil
-import numpy as np
-import matplotlib.pyplot as plt
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torchvision.datasets as dset
-import torchvision.transforms as T
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from torch.utils.data import sampler
-from google.colab import drive
-from glob import glob
-from datetime import datetime
-from PIL import Image
-
-
-def download_and_format(mnt_path='/content/drive',
-                        token_path='/',
-                        data_path='/5LSM0-final-assignment',
-                        desired_size = 512):
-  """
-  This function donwloads and formats the data. More specifically:
-  1.  Google Drive is mounted to colab.
-  2.  Everything in the current folder that is related to the files that are to 
-      be downloaded, or to the files that this function creates are DELETED.
-      This is a precaution to prevent file conflicts.
-  3.  Download the ISIC 2019 data from Kaggle. Your Kaggle token is needed for 
-      this. To download your Kaggle token, visit https://www.kaggle.com , then 
-      go to 'my account' and then 'download API token'. To pass your Kaggle
-      token to the script, Google Drive is used. This way, multiple people can
-      run/share the same script without sharing sensitive data. The token 
-      should have the name 'kaggle.json' and be placed in Google Drive at the
-      path specified by 'token_path'.
-  3.  The downloaded data is unziped.
-  4.  The width and height of the images are resized to 'desired_size' and 
-      zero padding is added if necessary.
-  4.  The train data/images are organized into subfolders. Each image is placed 
-      into a subfolder that corresponds to its class. Doing this makes it
-      possible to use 'torchvision.datasets.ImageFolder'.
-  6.  A zip file is created that contains the reformatted and reorganized test
-      and training data. The reason for this is because when saving the data and
-      loading it from Google Drive at a later time, a time-out error can occur.
-      A Google Drive timeout can occur when a folder contains lots (thousands) 
-      of files, which is currently the case.
-  7.  The zip file is moved to Google Drive, to a folder with name 
-      '5LSM0-final-assignment'. Make sure that enough space is available, since 
-      the function does not check this!
-  5.  All the files, except data.zip on Google Drive, are deleted.
-
-  Todo:  link the metadata to the image, this is currently ignored.
-  
-  Args:
-    mnt_path (string): path where the google drive will be mounted.
-    token_path (string): Path on Google Drive where the token can be found.
-      With '/' being the root of Google Drive.
-    data_path (string): Path on Google Drive where data.zip will be stored. 
-      With '/' being the root of Google Drive.
-    desired_size (int): desired image width and height.
-
-  Returns:
-    (none)
-  """
-
-  # make sure google drive is mounted
-  print('\nMounting Google Drive...')
-  drive.mount(mnt_path, force_remount=True)
-  print('...Done')
-
-  # remove files (in case this is a redownload)
-  print('\nDeleting old files...')
-  !rm -r ISIC_2019_Test_Input
-  !rm -r ISIC_2019_Training_Input
-  !rm -r isic-2019-training-input.zip
-  !rm -r isic-2019-training-groundtruth.zip
-  !rm -r isic-2019-test-input.zip
-  !rm -r isic-2019-training-metadata.zip
-  !rm -r isic-2019-test-metadata.zip
-  !rm -r ISIC_2019_Training_GroundTruth.csv
-  !rm -r ISIC_2019_Training_Metadata.csv
-  !rm -r ISIC_2019_Test_Metadata.csv
-  print('...Done')
-
-  # Set kaggle configuration directory
-  os.environ['KAGGLE_CONFIG_DIR'] = mnt_path+'/My Drive'+token_path
-
-  # download data
-  print('\nDownloading...')
-  !kaggle datasets download -d kioriaanthony/isic-2019-training-input
-  !kaggle datasets download -d kioriaanthony/isic-2019-training-groundtruth
-  !kaggle datasets download -d kioriaanthony/isic-2019-test-input
-  # !kaggle datasets download -d kioriaanthony/isic-2019-training-metadata
-  # !kaggle datasets download -d kioriaanthony/isic-2019-test-metadata
-  print('...Done')
-
-  # unzip it (quietly)
-  print('\nUnzipping...')
-  !unzip -q isic-2019-training-input.zip
-  !unzip -q isic-2019-training-groundtruth.zip
-  !unzip -q isic-2019-test-input
-  # !unzip -q isic-2019-test-metadata.zip
-  # !unzip -q isic-2019-training-metadata.zip
-  print('...Done')
-
-  # resize and zero-padd images to desired size
-  print_every = 1000
-  print('\nResizing and padding images...')
-  paths = glob('/content/ISIC_2019_Test_Input/*.jpg') + \
-          glob('/content/ISIC_2019_Training_Input/*.jpg')
-  N_files = len(paths)
-  t_start = time.clock()
-  N_cur = 0
-  for path in paths:
-    # print progress 
-    N_cur = N_cur+1
-    if N_cur % print_every  == 0:
-      N_remain = N_files - N_cur
-      t_elapse = time.clock()-t_start
-      t_rem = N_remain * t_elapse/N_cur
-      t_elapse_str = time.strftime('%Mm %Ss', time.gmtime(t_elapse))
-      t_rem_str = time.strftime('%Mm %Ss', time.gmtime(t_rem))
-      print('Img %i / %i , elapsed time %s, estimated remaining time %s' % (N_cur, N_files, t_elapse_str, t_rem_str))
-    # load image
-    img = Image.open(path)
-    # resize
-    resized_size = np.array([img.width, img.height])*desired_size//max(img.size)
-    img = img.resize(resized_size)
-    # pad
-    empty_img = Image.new("RGB", (desired_size, desired_size))
-    paste_location = tuple((desired_size - resized_size)//2)
-    empty_img.paste(img, paste_location)
-    img = empty_img
-    # save img
-    img.save(path)
-  print('...Done')
-
-  # create subfolders with class name (if they do not exist yet) 
-  print('\nCreating subdirs...')
-  # path to training and test folder
-  paths = ['/content/ISIC_2019_Training_Input/',
-           '/content/ISIC_2019_Test_Input/']
-  classes = ['mel', 'nv', 'bcc', 'ak', 'bkl', 'df', 'vasc', 'scc', 'unk']
-  for path in paths:
-    print('creating subdirs in: '+path)
-    for clas in classes:
-      if not os.path.exists(path+clas):
-        os.mkdir(path+clas)
-        print('created dir: '+clas)
-      else:
-        print('dir: '+clas+' already exists')
-  print('...Done')
-
-  # obtain the class that corresponds to each img and move it to its folder.
-  print('\nReading classing and moving images')
-  # Training data
-  with open('ISIC_2019_Training_GroundTruth.csv', 'r') as f:
-    next(f) # skip header (first line) of .csv file
-    for line in f:
-      # obtain image name and corresponding class name
-      arr = np.array(line.split(','))
-      img = arr[0]+'.jpg' # img name
-      idx = np.where( arr[1:].astype(np.float) == 1.0 )[0][0] # class-index
-      clas = classes[idx]
-      # move image (if it exists)
-      if os.path.exists(paths[0]+img):
-        os.rename(paths[0]+img, paths[0]+clas+'/'+img) # rename = move
-      else :
-        print('img not found: '+img)
-  # Test data (every class is unknown, so move everything to unk)
-  for img in glob(paths[1]+'*.jpg'):
-    name = img.split('/')[-1]
-    os.rename(img, paths[1]+'unk/'+name)
-  print('...Done')
-
-  # # add test and training data to zip (quietly and recursive)
-  print('\nCreating data.zip containing training and test data...')
-  !zip -q -r data.zip ISIC_2019_Test_Input ISIC_2019_Training_Input
-  print('...Done')
-
-  # move zip to drive
-  print('\nMoving data to Google Drive...')
-  shutil.move('/content/data.zip', mnt_path+'/My Drive'+data_path+'/data.zip')
-  print('...Done')
-
-  # remove left over files
-  print('\nDeleting left-over files...')
-  !rm -r isic-2019-training-input.zip
-  !rm -r isic-2019-training-groundtruth.zip
-  !rm -r isic-2019-test-input.zip
-  !rm -r isic-2019-training-metadata.zip
-  !rm -r isic-2019-test-metadata.zip
-  !rm -r ISIC_2019_Training_GroundTruth.csv
-  !rm -r ISIC_2019_Training_Metadata.csv
-  !rm -r ISIC_2019_Test_Metadata.csv
-  !rm -r ISIC_2019_Test_Input
-  !rm -r ISIC_2019_Training_Input
-  print('...Done')
-
-download_and_format()
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "download_and_format.ipynb",
+      "provenance": [],
+      "authorship_tag": "ABX9TyPqUmMMGKH2vO6QJ7V84uh/",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/vorst4/TUE_5LSM0_g6/blob/master/download_and_format.ipynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "_vUgAFJWkZZx",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "\n",
+        "import os\n",
+        "import time\n",
+        "import json\n",
+        "import shutil\n",
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "import torch\n",
+        "import torch.nn as nn\n",
+        "import torch.optim as optim\n",
+        "import torchvision.datasets as dset\n",
+        "import torchvision.transforms as T\n",
+        "import torch.nn.functional as F\n",
+        "from torch.utils.data import DataLoader\n",
+        "from torch.utils.data import sampler\n",
+        "from google.colab import drive\n",
+        "from glob import glob\n",
+        "from datetime import datetime\n",
+        "from PIL import Image\n",
+        "\n",
+        "\n",
+        "def download_and_format(mnt_path='/content/drive',\n",
+        "                        token_path='/',\n",
+        "                        data_path='/5LSM0-final-assignment',\n",
+        "                        desired_size = 512):\n",
+        "  \"\"\"\n",
+        "  This function donwloads and formats the data. More specifically:\n",
+        "  1.  Google Drive is mounted to colab.\n",
+        "  2.  Everything in the current folder that is related to the files that are to \n",
+        "      be downloaded, or to the files that this function creates are DELETED.\n",
+        "      This is a precaution to prevent file conflicts.\n",
+        "  3.  Download the ISIC 2019 data from Kaggle. Your Kaggle token is needed for \n",
+        "      this. To download your Kaggle token, visit https://www.kaggle.com , then \n",
+        "      go to 'my account' and then 'download API token'. To pass your Kaggle\n",
+        "      token to the script, Google Drive is used. This way, multiple people can\n",
+        "      run/share the same script without sharing sensitive data. The token \n",
+        "      should have the name 'kaggle.json' and be placed in Google Drive at the\n",
+        "      path specified by 'token_path'.\n",
+        "  3.  The downloaded data is unziped.\n",
+        "  4.  The width and height of the images are resized to 'desired_size' and \n",
+        "      zero padding is added if necessary.\n",
+        "  4.  The train data/images are organized into subfolders. Each image is placed \n",
+        "      into a subfolder that corresponds to its class. Doing this makes it\n",
+        "      possible to use 'torchvision.datasets.ImageFolder'.\n",
+        "  6.  A zip file is created that contains the reformatted and reorganized test\n",
+        "      and training data. The reason for this is because when saving the data and\n",
+        "      loading it from Google Drive at a later time, a time-out error can occur.\n",
+        "      A Google Drive timeout can occur when a folder contains lots (thousands) \n",
+        "      of files, which is currently the case.\n",
+        "  7.  The zip file is moved to Google Drive, to a folder with name \n",
+        "      '5LSM0-final-assignment'. Make sure that enough space is available, since \n",
+        "      the function does not check this!\n",
+        "  5.  All the files, except data.zip on Google Drive, are deleted.\n",
+        "\n",
+        "  Todo:  link the metadata to the image, this is currently ignored.\n",
+        "  \n",
+        "  Args:\n",
+        "    mnt_path (string): path where the google drive will be mounted.\n",
+        "    token_path (string): Path on Google Drive where the token can be found.\n",
+        "      With '/' being the root of Google Drive.\n",
+        "    data_path (string): Path on Google Drive where data.zip will be stored. \n",
+        "      With '/' being the root of Google Drive.\n",
+        "    desired_size (int): desired image width and height.\n",
+        "\n",
+        "  Returns:\n",
+        "    (none)\n",
+        "  \"\"\"\n",
+        "\n",
+        "  # Mount Google Drive\n",
+        "  print('\\nMounting Google Drive...')\n",
+        "  drive.mount(mnt_path, force_remount=True)\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # remove files (in case this is a redownload)\n",
+        "  print('\\nDeleting old files...')\n",
+        "  !rm -r ISIC_2019_Test_Input\n",
+        "  !rm -r ISIC_2019_Training_Input\n",
+        "  !rm -r isic-2019-training-input.zip\n",
+        "  !rm -r isic-2019-training-groundtruth.zip\n",
+        "  !rm -r isic-2019-test-input.zip\n",
+        "  !rm -r isic-2019-training-metadata.zip\n",
+        "  !rm -r isic-2019-test-metadata.zip\n",
+        "  !rm -r ISIC_2019_Training_GroundTruth.csv\n",
+        "  !rm -r ISIC_2019_Training_Metadata.csv\n",
+        "  !rm -r ISIC_2019_Test_Metadata.csv\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # Set kaggle configuration directory\n",
+        "  os.environ['KAGGLE_CONFIG_DIR'] = mnt_path+'/My Drive'+token_path\n",
+        "\n",
+        "  # download data\n",
+        "  print('\\nDownloading...')\n",
+        "  !kaggle datasets download -d kioriaanthony/isic-2019-training-input\n",
+        "  !kaggle datasets download -d kioriaanthony/isic-2019-training-groundtruth\n",
+        "  !kaggle datasets download -d kioriaanthony/isic-2019-test-input\n",
+        "  # !kaggle datasets download -d kioriaanthony/isic-2019-training-metadata\n",
+        "  # !kaggle datasets download -d kioriaanthony/isic-2019-test-metadata\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # unzip it (quietly)\n",
+        "  print('\\nUnzipping...')\n",
+        "  !unzip -q isic-2019-training-input.zip\n",
+        "  !unzip -q isic-2019-training-groundtruth.zip\n",
+        "  !unzip -q isic-2019-test-input\n",
+        "  # !unzip -q isic-2019-test-metadata.zip\n",
+        "  # !unzip -q isic-2019-training-metadata.zip\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # resize and zero-padd images to desired size\n",
+        "  print_every = 1000\n",
+        "  print('\\nResizing and padding images...')\n",
+        "  paths = glob('/content/ISIC_2019_Test_Input/*.jpg') + \\\n",
+        "          glob('/content/ISIC_2019_Training_Input/*.jpg')\n",
+        "  N_files = len(paths)\n",
+        "  t_start = time.clock()\n",
+        "  N_cur = 0\n",
+        "  for path in paths:\n",
+        "    # print progress \n",
+        "    N_cur = N_cur+1\n",
+        "    if N_cur % print_every  == 0:\n",
+        "      N_remain = N_files - N_cur\n",
+        "      t_elapse = time.clock()-t_start\n",
+        "      t_rem = N_remain * t_elapse/N_cur\n",
+        "      t_elapse_str = time.strftime('%Mm %Ss', time.gmtime(t_elapse))\n",
+        "      t_rem_str = time.strftime('%Mm %Ss', time.gmtime(t_rem))\n",
+        "      print('Img %i / %i , elapsed time %s, estimated remaining time %s' % \n",
+        "            (N_cur, N_files, t_elapse_str, t_rem_str))\n",
+        "    # load image\n",
+        "    img = Image.open(path)\n",
+        "    # resize\n",
+        "    resized_size = np.array([img.width, img.height])*desired_size//max(img.size)\n",
+        "    img = img.resize(resized_size)\n",
+        "    # pad\n",
+        "    empty_img = Image.new(\"RGB\", (desired_size, desired_size))\n",
+        "    paste_location = tuple((desired_size - resized_size)//2)\n",
+        "    empty_img.paste(img, paste_location)\n",
+        "    img = empty_img\n",
+        "    # save img\n",
+        "    img.save(path)\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # create subfolders with class name (if they do not exist yet) \n",
+        "  print('\\nCreating subdirs...')\n",
+        "  # path to training and test folder\n",
+        "  paths = ['/content/ISIC_2019_Training_Input/',\n",
+        "           '/content/ISIC_2019_Test_Input/']\n",
+        "  classes = ['mel', 'nv', 'bcc', 'ak', 'bkl', 'df', 'vasc', 'scc', 'unk']\n",
+        "  for path in paths:\n",
+        "    print('creating subdirs in: '+path)\n",
+        "    for clas in classes:\n",
+        "      if not os.path.exists(path+clas):\n",
+        "        os.mkdir(path+clas)\n",
+        "        print('created dir: '+clas)\n",
+        "      else:\n",
+        "        print('dir: '+clas+' already exists')\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # obtain the class that corresponds to each img and move it to its folder.\n",
+        "  print('\\nReading classing and moving images')\n",
+        "  # Training data\n",
+        "  with open('ISIC_2019_Training_GroundTruth.csv', 'r') as f:\n",
+        "    next(f) # skip header (first line) of .csv file\n",
+        "    for line in f:\n",
+        "      # obtain image name and corresponding class name\n",
+        "      arr = np.array(line.split(','))\n",
+        "      img = arr[0]+'.jpg' # img name\n",
+        "      idx = np.where( arr[1:].astype(np.float) == 1.0 )[0][0] # class-index\n",
+        "      clas = classes[idx]\n",
+        "      # move image (if it exists)\n",
+        "      if os.path.exists(paths[0]+img):\n",
+        "        os.rename(paths[0]+img, paths[0]+clas+'/'+img) # rename = move\n",
+        "      else :\n",
+        "        print('img not found: '+img)\n",
+        "  # Test data (every class is unknown, so move everything to unk)\n",
+        "  for img in glob(paths[1]+'*.jpg'):\n",
+        "    name = img.split('/')[-1]\n",
+        "    os.rename(img, paths[1]+'unk/'+name)\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # add test and training data to zip (quietly and recursive)\n",
+        "  print('\\nCreating data.zip containing training and test data...')\n",
+        "  !zip -q -r data.zip ISIC_2019_Test_Input ISIC_2019_Training_Input\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # move zip to drive\n",
+        "  print('\\nMoving data to Google Drive...')\n",
+        "  shutil.move('/content/data.zip', mnt_path+'/My Drive'+data_path+'/data.zip')\n",
+        "  print('...Done')\n",
+        "\n",
+        "  # remove left over files\n",
+        "  print('\\nDeleting left-over files...')\n",
+        "  !rm -r isic-2019-training-input.zip\n",
+        "  !rm -r isic-2019-training-groundtruth.zip\n",
+        "  !rm -r isic-2019-test-input.zip\n",
+        "  !rm -r isic-2019-training-metadata.zip\n",
+        "  !rm -r isic-2019-test-metadata.zip\n",
+        "  !rm -r ISIC_2019_Training_GroundTruth.csv\n",
+        "  !rm -r ISIC_2019_Training_Metadata.csv\n",
+        "  !rm -r ISIC_2019_Test_Metadata.csv\n",
+        "  !rm -r ISIC_2019_Test_Input\n",
+        "  !rm -r ISIC_2019_Training_Input\n",
+        "  print('...Done')\n",
+        "\n",
+        "\n",
+        "# --------------------------- Download and Format ---------------------------- #\n",
+        "download_and_format()\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    }
+  ]
+}
