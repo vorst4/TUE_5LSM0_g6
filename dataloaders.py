@@ -77,21 +77,30 @@ def dataloaders(root='/content/',
   dataset_val = dset.ImageFolder(root+train_img_dir, transform=transform_val)
   dataset_test = dset.ImageFolder(root+test_img_dir, transform=transform_test)
 
-  # split train into validation and (new) train
-  N = len(dataset_train.imgs)
-  N_train = int(np.round(N*(100-val_ratio)/100))
-  N_val = N-N_train
-  N_test = len(dataset_test.imgs)
-
-  # indices related to validation and the (new) training set.
-  random_indices = np.array(range(N))
-  np.random.shuffle(random_indices)
-  indices_train = random_indices[:N_train]
-  indices_val  =random_indices[N_train:]
+  # use <val_ratio> percent of the training data as validation, use the 
+  # remaining data as the new training data. Also, take an equal ratio of each
+  # class. Reason is that there are classes with very few images, by not taking
+  # an equal percentage of each class its possible that some classes are left
+  # entirely out of the validation set.
+  N_classes = 9
+  for i in range(N_classes):
+    # indices of class <i>
+    idxs = np.where(np.array(dataset_train.targets) == i)[0]
+    # shuffle them
+    np.random.shuffle(idxs)
+    # determine the number of (new) training samples
+    N_train = int(np.round(len(idxs)*(100-val_ratio)/100))
+    # split the (old) training set into (new) training and validation set
+    if i==0:
+      idxs_train = idxs[:N_train]
+      idxs_val = idxs[N_train:]
+    else:
+      idxs_train = np.concatenate([idxs_train, idxs[:N_train]])
+      idxs_val = np.concatenate([idxs_val, idxs[N_train:]])
 
   # samplers
-  sampler_train = sampler.SubsetRandomSampler(indices_train)
-  sampler_val = sampler.SubsetRandomSampler(indices_val)
+  sampler_train = sampler.SubsetRandomSampler(idxs_train)
+  sampler_val = sampler.SubsetRandomSampler(idxs_val)
 
   # dataloaders
   dl_train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
