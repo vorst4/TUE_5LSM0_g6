@@ -79,24 +79,14 @@ class ResNet(nn.Module):
     return nn.Sequential(*layers)
 
   def forward(self, x):
-    print(x.size())
     out = F.relu(self.bn1(self.conv1(x)))
-    print(out.size())
     out = self.layer1(out)
-    print(out.size())
     out = self.layer2(out)
-    print(out.size())
     out = self.layer3(out)
-    print(out.size())
     out = self.layer4(out)
-    print(out.size())
     out = F.avg_pool2d(out, 4)
-    print(out.size())
     out = out.view(out.size(0), -1)
-    print(out.size())
     out = self.linear(out)
-    print(out.size())
-    asdf()
     return out
 
   def backup_to_drive(self):
