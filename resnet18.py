@@ -92,7 +92,7 @@ class ResNet(nn.Module):
   def backup_to_drive(self):
     date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     path = self.backup_restore_path + self.backup_restore_name_prefix + date_time+'.pt'
-    torch.save(model.state_dict(), path)
+    torch.save(self.state_dict(), path)
 
   def restore_from_drive(self, path):
     self.load_state_dict(torch.load(path))

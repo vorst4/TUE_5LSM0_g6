@@ -39,7 +39,10 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
   model.acc_test = []
   model.elapsed_time = []
   time_start = time.clock()
-      
+  N_iter = int(len(dataloader.dataset.samples)/S.batch_size)
+  N_epoch = S.epochs
+  N_tot = N_iter * N_epoch
+
   for e in range(S.epochs):
     for t, (x, y) in enumerate(dataloader):
       model.train()  # put model to training mode
@@ -61,21 +64,30 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
       # append loss 
       model.loss.append(loss)
 
-      # update plot
+      # print update
       if t % S.print_every == 0:
-        time_elapsed = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
-        stri = accuracy(dl_val, model, S)
-        print('Iteration %d, loss = %.4f, time = %s, %s' % 
-              (t, loss.item(), time_elapsed, stri))
+        t_elap = time.clock()-time_start
+        N_elap = e*N_iter + t
+        N_rem = N_tot - N_elap
+        t_rem = int(N_rem * t_elap / (N_elap+1))
+        str1 = 'Epoch %i/%i, iter %i/%i, t_elap.%s  t_rem.%s, ' % \
+              (e, N_epoch, t, N_iter, time_str(t_elap), time_str(t_rem) )  
+        str2 = 'loss %.4f %s ' % (loss.item(), accuracy(dl_val, model, S) )
+        print(str1+str2)
         
 
     lr_exp.step()
-    model.elapsed_time = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
+    model.elapsed_time = time_str(time.clock()-time_start)
     if S.backup_each_epoch:
       model.backup_to_drive()
 
     print(lr_exp.get_lr())
 
+
+# ---------------------------------------------------------------------------- #
+
+def time_str(t):
+  return time.strftime('%Hh%Mm%Ss', time.gmtime(t))
 
 # ---------------------------------------------------------------------------- #
 
@@ -106,7 +118,7 @@ def accuracy(dataloader, model, S):
     else:
       model.acc_val.append(acc)
 
-    str1 = 'acc = %.2f, %d/%d correct\n' % (100 * acc, num_correct, num_samples)
+    str1 = 'acc %.2f%% (%i/%i)\n' % (100 * acc, num_correct, num_samples)
     str2 = '\t'
     for ii in range(9):
       if ii==4: # add line break
