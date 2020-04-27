@@ -71,9 +71,15 @@ def dataloaders(root='/content/',
   N_val = N-N_train
   N_test = len(dataset_test.imgs)
 
+  # indices related to validation and the (new) training set.
+  random_indices = np.array(range(N))
+  np.random.shuffle(random_indices)
+  indices_train = random_indices[:N_train]
+  indices_val  =random_indices[N_train:]
+
   # samplers
-  sampler_train = sampler.SubsetRandomSampler(range(N_train))
-  sampler_val = sampler.SubsetRandomSampler(range(N_train, N))
+  sampler_train = sampler.SubsetRandomSampler(indices_train)
+  sampler_val = sampler.SubsetRandomSampler(indices_val)
 
   # dataloaders
   dl_train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)

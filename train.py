@@ -19,6 +19,8 @@ from datetime import datetime
 from PIL import Image
 
 
+# ---------------------------------------------------------------------------- #
+
 def train(model, optimizer, dataloader, dl_val, S):
   """
   Trains the specified model and prints the progress
@@ -63,7 +65,8 @@ def train(model, optimizer, dataloader, dl_val, S):
       if t % S.print_every == 0:
         time_elapsed = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
         stri = accuracy(dl_val, model, S)
-        print('Iteration %d, loss = %.4f, time = %s, %s' % (t, loss.item(), time_elapsed, stri))
+        print('Iteration %d, loss = %.4f, time = %s, %s' % 
+              (t, loss.item(), time_elapsed, stri))
         
 
     my_lr_scheduler.step()
@@ -73,8 +76,13 @@ def train(model, optimizer, dataloader, dl_val, S):
 
     print(my_lr_scheduler.get_lr())
 
+
 # ---------------------------------------------------------------------------- #
+
 def accuracy(loader, model, S):
+  """
+  Calculate accuracy of given model
+  """
   num_correct = 0
   num_samples = 0
   model.eval()  # set model to evaluation mode
