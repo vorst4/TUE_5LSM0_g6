@@ -99,7 +99,7 @@ def accuracy(dataloader, model, S):
       num_samples += preds.size(0)
       for ii in range(9):
         ncc[ii] += ( (preds == ii) & (y==ii)).sum()
-        nsc[ii] += (preds==ii).sum()
+        nsc[ii] += (y==ii).sum()
     acc = float(num_correct) / num_samples
     if dataloader.dataset.train:
       model.acc_test.append(acc)
