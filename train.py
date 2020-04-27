@@ -19,7 +19,7 @@ from datetime import datetime
 from PIL import Image
 
 
-def train(model, optimizer, dl, S):
+def train(model, optimizer, dataloader, dl_val, S):
   """
   Trains the specified model and prints the progress
   
@@ -39,7 +39,7 @@ def train(model, optimizer, dl, S):
   time_start = time.clock()
       
   for e in range(S.epochs):
-    for t, (x, y) in enumerate(dl.train):
+    for t, (x, y) in enumerate(dataloader):
       model.train()  # put model to training mode
       x = x.to(device=S.device, dtype=S.dtype)  # move to device, e.g. GPU
       y = y.to(device=S.device, dtype=torch.long)
@@ -62,7 +62,7 @@ def train(model, optimizer, dl, S):
       # update plot
       if t % S.print_every == 0:
         time_elapsed = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
-        stri = accuracy(dl.val, model)
+        stri = accuracy(dl_val, model)
         print('Iteration %d, loss = %.4f, time = %s, %s' % (t, loss.item(), time_elapsed, stri))
         
 

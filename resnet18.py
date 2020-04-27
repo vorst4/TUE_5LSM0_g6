@@ -115,6 +115,6 @@ class ResNet(nn.Module):
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
 
-def ResNet18():
+def resnet18():
     return ResNet(BasicBlock)
 

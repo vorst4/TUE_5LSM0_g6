@@ -25,7 +25,7 @@ def dataloaders(root='/content/',
                 train_img_dir='ISIC_2019_Training_Input/',
                 test_img_dir='ISIC_2019_Test_Input/',
                 batch_size=64,
-                validation_size_percentage = 5):
+                val_ratio = 5):
   """
   This function creates and returns dataloaders for the train, validation and 
   test data set.
@@ -67,7 +67,7 @@ def dataloaders(root='/content/',
 
   # split train into validation and (new) train
   N = len(dataset_train.imgs)
-  N_train = int(np.round(N*(100-validation_size_percentage)/100))
+  N_train = int(np.round(N*(100-val_ratio)/100))
   N_val = N-N_train
   N_test = len(dataset_test.imgs)
 
@@ -76,14 +76,13 @@ def dataloaders(root='/content/',
   sampler_val = sampler.SubsetRandomSampler(range(N_train, N))
 
   # dataloaders
-  dl = type('DataLoaders', (), {})()
-  dl.train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
-  dl.val = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_val)
-  dl.test = DataLoader(dataset_test, batch_size=batch_size)
+  dl_train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
+  dl_val = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_val)
+  dl_test = DataLoader(dataset_test, batch_size=batch_size)
 
   # add bool to see if certain dataset is the training dataset
-  dl.train.dataset.train = True
-  dl.val.dataset.train = True
-  dl.test.dataset.train = False
+  dl_train.dataset.train = True
+  dl_val.dataset.train = True
+  dl_test.dataset.train = False
 
-  return dl, N_train, N_val, N_test
+  return dl_train, dl_val, dl_test
