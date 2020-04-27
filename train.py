@@ -85,6 +85,8 @@ def accuracy(dataloader, model, S):
   """
   num_correct = 0
   num_samples = 0
+  ncc = np.zeros(9)
+  nsc = np.zeros(9)
   model.eval()  # set model to evaluation mode
   with torch.no_grad():
     for x, y in dataloader:
@@ -94,10 +96,19 @@ def accuracy(dataloader, model, S):
       _, preds = scores.max(1)
       num_correct += (preds == y).sum()
       num_samples += preds.size(0)
+      for ii in range(9):
+        ncc[ii] += ( (preds == ii) == (y==ii)).sum()
+        nsc[ii] += (preds==ii).sum()
     acc = float(num_correct) / num_samples
     if dataloader.dataset.train:
       model.acc_test.append(acc)
     else:
       model.acc_val.append(acc)
-    return 'acc = %.2f, %d/%d correct' % (100 * acc, num_correct, num_samples)
+
+    str1 = 'acc = %.2f, %d/%d correct\n' % (100 * acc, num_correct, num_samples)
+    str2 =  '\tak %i/%i, bcc %i/%i, bkl %i/%i, df %i/%i' % \
+            (ncc[0], nsc[0], ncc[1], nsc[1], ncc[2], nsc[2], ncc[3], nsc[3])
+    print(str1+str2)
+    asdf()
+    return str1+str2
   
