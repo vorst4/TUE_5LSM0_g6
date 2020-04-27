@@ -62,7 +62,7 @@ def train(model, optimizer, dataloader, dl_val, S):
       # update plot
       if t % S.print_every == 0:
         time_elapsed = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
-        stri = accuracy(dl_val, model)
+        stri = accuracy(dl_val, model, S)
         print('Iteration %d, loss = %.4f, time = %s, %s' % (t, loss.item(), time_elapsed, stri))
         
 
@@ -74,14 +74,14 @@ def train(model, optimizer, dataloader, dl_val, S):
     print(my_lr_scheduler.get_lr())
 
 # ---------------------------------------------------------------------------- #
-def accuracy(loader, model):
+def accuracy(loader, model, S):
   num_correct = 0
   num_samples = 0
   model.eval()  # set model to evaluation mode
   with torch.no_grad():
     for x, y in loader:
-      x = x.to(device=device, dtype=dtype)  # move to device, e.g. GPU
-      y = y.to(device=device, dtype=torch.long)
+      x = x.to(device=S.device, dtype=S.dtype)  # move to device, e.g. GPU
+      y = y.to(device=S.device, dtype=torch.long)
       scores = model(x)
       _, preds = scores.max(1)
       num_correct += (preds == y).sum()
