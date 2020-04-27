@@ -21,7 +21,7 @@ from PIL import Image
 
 # ---------------------------------------------------------------------------- #
 
-def train(model, optimizer, dataloader, dl_val, S):
+def train(model, optimizer, dataloader, dl_val, lr_exp, S):
   """
   Trains the specified model and prints the progress
   
@@ -69,12 +69,12 @@ def train(model, optimizer, dataloader, dl_val, S):
               (t, loss.item(), time_elapsed, stri))
         
 
-    my_lr_scheduler.step()
+    lr_exp.step()
     model.elapsed_time = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
     if backup_after_epoch:
       model.backup_to_drive()
 
-    print(my_lr_scheduler.get_lr())
+    print(lr_exp.get_lr())
 
 
 # ---------------------------------------------------------------------------- #
