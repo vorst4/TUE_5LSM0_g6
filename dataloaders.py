@@ -25,7 +25,8 @@ def dataloaders(root='/content/',
                 train_img_dir='ISIC_2019_Training_Input/',
                 test_img_dir='ISIC_2019_Test_Input/',
                 batch_size=64,
-                val_ratio = 5):
+                val_ratio = 5,
+                img_size=64):
   """
   This function creates and returns dataloaders for the train, validation and 
   test data set.
@@ -57,16 +58,16 @@ def dataloaders(root='/content/',
   # todo: data normalization
   transform_train = T.Compose([#T.RandomHorizontalFlip(), 
                                #T.RandomVerticalFlip(),
-                               T.Resize((64,64)),  # todo: temporary fix
+                               T.Resize((img_size,img_size)),  # todo: temporary fix
                                T.ToTensor(),
                                T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                                ])
-  transform_val =  T.Compose([T.Resize((64,64)),
+  transform_val =  T.Compose([T.Resize((img_size,img_size)),
                                T.ToTensor(),
                                T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                                ])
 
-  transform_test  = T.Compose([T.Resize((64,64)),
+  transform_test  = T.Compose([T.Resize((img_size,img_size)),
                                T.ToTensor(),
                                T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                                ])
