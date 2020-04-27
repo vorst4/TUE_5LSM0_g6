@@ -71,7 +71,7 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
 
     lr_exp.step()
     model.elapsed_time = time.strftime('%H:%M:%S', time.gmtime(time.clock()-time_start))
-    if backup_after_epoch:
+    if S.backup_each_epoch:
       model.backup_to_drive()
 
     print(lr_exp.get_lr())

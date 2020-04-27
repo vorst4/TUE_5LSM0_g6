@@ -73,6 +73,7 @@ def dataloaders(root='/content/',
 
   # datasets
   dataset_train = dset.ImageFolder(root+train_img_dir, transform=transform_train)
+  dataset_val = dset.ImageFolder(root+train_img_dir, transform=transform_val)
   dataset_test = dset.ImageFolder(root+test_img_dir, transform=transform_test)
 
   # split train into validation and (new) train
@@ -93,7 +94,7 @@ def dataloaders(root='/content/',
 
   # dataloaders
   dl_train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
-  dl_val = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_val)
+  dl_val = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val)
   dl_test = DataLoader(dataset_test, batch_size=batch_size)
 
   # add bool to see if certain dataset is the training dataset

@@ -107,7 +107,7 @@ class ResNet(nn.Module):
   def visualize(self):
     fig=plt.figure(figsize=(12, 6), dpi= 80, facecolor='w', edgecolor='k')
     x = np.array(range(len(self.loss)))
-    plt.plot(x, model.loss)
+    plt.plot(x, self.loss)
     plt.ylabel('Loss')
     plt.xlabel('Iterations')
     plt.show()
