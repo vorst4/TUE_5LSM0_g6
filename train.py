@@ -113,6 +113,6 @@ def accuracy(dataloader, model, S):
         str2 = str2+'\n\t'
       elif ii==7: # skip class 'unk'
         continue
-      str2 = str2 + '%-4s %3i/%-5i ' % (classes[ii], ncc[ii], nsc[ii])
+      str2 = str2 + '%-4s %5i/%-8i ' % (classes[ii], ncc[ii], nsc[ii])
     return str1+str2
   
