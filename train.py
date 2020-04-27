@@ -79,7 +79,7 @@ def train(model, optimizer, dataloader, dl_val, S):
 
 # ---------------------------------------------------------------------------- #
 
-def accuracy(loader, model, S):
+def accuracy(dataloader, model, S):
   """
   Calculate accuracy of given model
   """
@@ -87,7 +87,7 @@ def accuracy(loader, model, S):
   num_samples = 0
   model.eval()  # set model to evaluation mode
   with torch.no_grad():
-    for x, y in loader:
+    for x, y in dataloader:
       x = x.to(device=S.device, dtype=S.dtype)  # move to device, e.g. GPU
       y = y.to(device=S.device, dtype=torch.long)
       scores = model(x)
@@ -95,7 +95,7 @@ def accuracy(loader, model, S):
       num_correct += (preds == y).sum()
       num_samples += preds.size(0)
     acc = float(num_correct) / num_samples
-    if loader.dataset.train:
+    if dataloader.dataset.train:
       model.acc_test.append(acc)
     else:
       model.acc_val.append(acc)

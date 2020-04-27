@@ -20,6 +20,8 @@ from datetime import datetime
 from PIL import Image
 
 
+# ---------------------------------------------------------------------------- #
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -48,7 +50,7 @@ class BasicBlock(nn.Module):
         return out
 
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
+# ---------------------------------------------------------------------------- #
 
 class ResNet(nn.Module):
   def __init__(self, block, num_classes=9):
@@ -65,7 +67,7 @@ class ResNet(nn.Module):
     self.layer2 = self._make_layer(block, 128, stride=2)
     self.layer3 = self._make_layer(block, 256, stride=2)
     self.layer4 = self._make_layer(block, 512, stride=2)
-    self.linear = nn.Linear(512*block.expansion*16, num_classes)
+    self.linear = nn.Linear(512*block.expansion*4, num_classes)
 
   def _make_layer(self, block, planes, stride):
     strides = [stride,1] 
@@ -111,9 +113,7 @@ class ResNet(nn.Module):
     plt.show()
 
 
-    
-
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
+# ---------------------------------------------------------------------------- #
 
 def resnet18():
     return ResNet(BasicBlock)

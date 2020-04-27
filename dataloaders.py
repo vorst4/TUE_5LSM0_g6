@@ -55,11 +55,21 @@ def dataloaders(root='/content/',
   #       for the moment hotfixed by resizing it to 32x32. Note that, when 
   #       changing this, the neural net also needs to be changed
   # todo: data normalization
-  transform_train = T.Compose([T.RandomHorizontalFlip(), 
-                               T.RandomVerticalFlip(),
-                               T.Resize((128,128)),  # todo: temporary fix
-                               T.ToTensor()])
-  transform_test  = T.ToTensor()
+  transform_train = T.Compose([#T.RandomHorizontalFlip(), 
+                               #T.RandomVerticalFlip(),
+                               T.Resize((64,64)),  # todo: temporary fix
+                               T.ToTensor(),
+                               T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                               ])
+  transform_val =  T.Compose([T.Resize((64,64)),
+                               T.ToTensor(),
+                               T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                               ])
+
+  transform_test  = T.Compose([T.Resize((64,64)),
+                               T.ToTensor(),
+                               T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                               ])
 
   # datasets
   dataset_train = dset.ImageFolder(root+train_img_dir, transform=transform_train)
@@ -88,7 +98,7 @@ def dataloaders(root='/content/',
 
   # add bool to see if certain dataset is the training dataset
   dl_train.dataset.train = True
-  dl_val.dataset.train = True
+  dl_val.dataset.train = False
   dl_test.dataset.train = False
 
   return dl_train, dl_val, dl_test
