@@ -67,7 +67,8 @@ class ResNet(nn.Module):
     self.layer2 = self._make_layer(block, 128, stride=2)
     self.layer3 = self._make_layer(block, 256, stride=2)
     self.layer4 = self._make_layer(block, 512, stride=2)
-    self.linear = nn.Linear(512*block.expansion*4, num_classes)
+    size = int(block.expansion*0.5*img_size**2)
+    self.linear = nn.Linear(size, num_classes)
 
   def _make_layer(self, block, planes, stride):
     strides = [stride,1] 
@@ -78,15 +79,23 @@ class ResNet(nn.Module):
     return nn.Sequential(*layers)
 
   def forward(self, x):
+    print(x.size())
     out = F.relu(self.bn1(self.conv1(x)))
+    print(out.size())
     out = self.layer1(out)
+    print(out.size())
     out = self.layer2(out)
+    print(out.size())
     out = self.layer3(out)
+    print(out.size())
     out = self.layer4(out)
+    print(out.size())
     out = F.avg_pool2d(out, 4)
+    print(out.size())
     out = out.view(out.size(0), -1)
+    print(out.size())
     out = self.linear(out)
-    print(out.size)
+    print(out.size())
     asdf()
     return out
 
@@ -117,6 +126,10 @@ class ResNet(nn.Module):
 
 # ---------------------------------------------------------------------------- #
 
-def resnet18():
-    return ResNet(BasicBlock)
+img_size = 0
+
+def resnet18(image_size):
+  global img_size
+  img_size = image_size
+  return ResNet(BasicBlock)
 
