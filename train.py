@@ -18,6 +18,11 @@ from glob import glob
 from datetime import datetime
 from PIL import Image
 
+# import backup
+import TUE_5LSM0_g6.backup
+importlib.reload(TUE_5LSM0_g6.backup)
+backup = TUE_5LSM0_g6.backup.backup
+
 
 # ---------------------------------------------------------------------------- #
 
@@ -79,7 +84,7 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
     lr_exp.step()
     model.elapsed_time = time_str(time.clock()-time_start)
     if S.backup_each_epoch:
-      model.backup_to_drive()
+      backup(model, S.modelname)
 
     print(lr_exp.get_lr())
 
