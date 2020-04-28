@@ -28,13 +28,20 @@ def restore(model,
   # if no date_time is given, use the latest
   if date_time == '':
     models = glob(model_path + modelname + '*.pt')
+    if len(models) == 0:
+      print('\nERROR: No models found with given modelname\n')
+      return model
     path = models[-1]
   else:
     path = model_path+modelname+'_'+date_time
+    if not os.path.exists(path):
+      print('\nERROR: Path of provided modelname and date_time not found\n')
+      return model
 
   # restore the model using the path
   model.load_state_dict(torch.load(path))
   model.eval()
+  print('\nRestored model\n')
 
   return model
   
