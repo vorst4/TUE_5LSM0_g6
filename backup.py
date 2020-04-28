@@ -20,9 +20,9 @@ from datetime import datetime
 from PIL import Image
 
 
-def backup(model,
-           model_path='/content/drive/My Drive/5LSM0-final-assignment/', 
-           modelname ):
+def backup(model, 
+           modelname,
+           model_path='/content/drive/My Drive/5LSM0-final-assignment/' ):
 
   date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
   path = model_path + modelname + '_' + date_time+'.pt'

@@ -21,12 +21,12 @@ from PIL import Image
 
 
 def restore(model, 
-            model_path='/content/drive/My Drive/5LSM0-final-assignment/', 
             modelname, 
-            date_time=none):
+            model_path='/content/drive/My Drive/5LSM0-final-assignment/',
+            date_time='):
   
   # if no date_time is given, use the latest
-  if date_time == none:
+  if date_time == '':
     models = glob(model_path + modelname + '*.pt')
     path = models[-1]
   else:
