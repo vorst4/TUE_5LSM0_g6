@@ -23,7 +23,7 @@ from PIL import Image
 def restore(model, 
             modelname, 
             model_path='/content/drive/My Drive/5LSM0-final-assignment/',
-            date_time='):
+            date_time=''):
   
   # if no date_time is given, use the latest
   if date_time == '':
