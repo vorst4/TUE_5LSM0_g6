@@ -77,7 +77,7 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
         N_rem = N_tot - N_elap
         t_rem = int(N_rem * t_elap / (N_elap+1))
         str1 = 'Epoch %i/%i, iter %i/%i, t_elap.%s  t_rem.%s, ' % \
-              (e, N_epoch, t, N_iter, time_str(t_elap), time_str(t_rem) )  
+              (e+1, N_epoch, t, N_iter, time_str(t_elap), time_str(t_rem) )  
         str2 = 'loss %.4f %s ' % (loss.item(), accuracy(dl_val, model, S) )
         print(str1+str2)
 
