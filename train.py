@@ -47,6 +47,7 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
   N_iter = int(len(dataloader.dataset.samples)/S.batch_size)
   N_epoch = S.epochs
   N_tot = N_iter * N_epoch
+  print('Number of iterations per epoch: ' N_iter)
 
   for e in range(S.epochs):
     for t, (x, y) in enumerate(dataloader):
