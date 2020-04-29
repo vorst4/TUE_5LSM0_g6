@@ -19,7 +19,7 @@ from datetime import datetime
 from PIL import Image
 
 
-def make_csv(path='/content/ISIC_2019_Test_Input/unk/'):
+def make_csv(model, path='/content/ISIC_2019_Test_Input/unk/'):
   rows=[]
   test_im_names=[]
   test_imgs=sorted(glob(path+'*.jpg'))
