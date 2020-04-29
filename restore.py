@@ -48,7 +48,7 @@ def restore(model,
   else:
     model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
     model.eval()
-  print('\nWARNING: Using CPU !!!\nRestored model\n')
+    print('\nWARNING: Using CPU !!!\nRestored model\n')
 
   return model
   
