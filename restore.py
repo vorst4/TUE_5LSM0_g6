@@ -30,12 +30,14 @@ def restore(model,
     models = glob(model_path + modelname + '*.pt')
     if len(models) == 0:
       print('\nERROR: No models found with given modelname\n')
+      print('\tpath: %s\n' % path)
       return model
     path = models[-1]
   else:
-    path = model_path+modelname+'_'+date_time
+    path = model_path+modelname+'_'+date_time+'.pt'
     if not os.path.exists(path):
-      print('\nERROR: Path of provided modelname and date_time not found\n')
+      print('\nERROR: Path of provided modelname and date_time not found')
+      print('\tpath: %s\n' % path)
       return model
 
   # restore the model
