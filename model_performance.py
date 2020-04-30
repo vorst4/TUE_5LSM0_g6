@@ -1,5 +1,6 @@
 
 import torch
+import numpy as np
 from src.efficientnet.efficientnet_pytorch.model import EfficientNet
 
 from restore import restore
@@ -27,21 +28,19 @@ def model_performance(S, model_params, dl_val, N_val, N_classes):
   model.eval()
 
   # pre allocate variables
-  y_true = torch.empty((N_val), device=torch.device('cpu'))
-  scores = torch.empty((N_val, N_classes), device=torch.device('cpu'))
-  i = 0
-  j = 0
+  y_true = np.empty(N_val)
+  scores = np.empty((N_val, N_classes))
+  i,j = 0,0
 
   # evaluate model on validation set
   print('\nEvaluating model on validation set...')
   for x, y in dl_val:
     x = x.to(device=S.device, dtype=S.dtype)
-    scores_ = model(x)
     j += x.shape[0]
-    y_true[i:j] = y
-    scores[i:j, :] = scores_
+    y_true[i:j] = y.numpy()
+    scores[i:j, :] =   model(x).cpu().detach().numpy()
     i = j
 
   # return
-  return y_true.numpy(), scores.numpy()
+  return y_true, scores
 
