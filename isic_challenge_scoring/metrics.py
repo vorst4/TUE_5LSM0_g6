@@ -53,7 +53,8 @@ def _label_balanced_multiclass_accuracy(
     # These are equal to rows of the confusion matrix
     true_label_frequencies = _get_frequencies(truth_labels, weights, categories)
 
-    balanced_accuracy = tp_counts.divide(true_label_frequencies).mean()
+    balanced_accuracy = tp_counts.divide(true_label_frequencies.values.reshape(-1)).mean()
+
     return balanced_accuracy
 
 
