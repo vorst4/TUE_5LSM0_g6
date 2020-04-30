@@ -1,5 +1,6 @@
 
 import torch
+import pandas as pd
 from isic_challenge_scoring.classification import ClassificationScore
 
 
@@ -29,6 +30,9 @@ class Score():
     self._dl_val = dl_val
     self._truth_labels = np.empty((N_val))
     self._validation_scores = np.empty(N_val, N_classes)
+    self._weights = pd.DataFrame()
+    self._weights.score_weight = np.ones(N_val)
+    self._weights.validation_weight = np.ones(N_val)
     self.iteration = []
 
 
@@ -55,20 +59,11 @@ class Score():
 
     # evaluate model on the validation set
     self._evaluate_model()
-    
-    # change 1 image with label 'nv' (index: 5) to 'unk' (index: 7). 
-    # Exception occurs if there is no image with label 'nv', do nothing if this
-    # occurs
-    try:
-      self._swap_single_label(5, 7)
-    except Exception: 
-      return
 
     # if a label exists that is not assigned to an image (such as 'unk') then 
     # assign it to an image with label 'nv' (biggest class). If no image of 'nv'
-    # exists then an error will occur. Do nothing and return if this is the
-    # case.
-    predicted_labels = np.argmax(self._validation_scores, axis=1)
+    # exists then the function will return and the score will not be calculated.
+    predicted_labels = self._predicted_labels()
     for label in range(N_classes):
       if not np.isin(predicted_labels, label):
         try:
@@ -76,6 +71,17 @@ class Score():
         except:
           return
 
+    # check if label 0-8 is assigned to at least one image. Do not calculate
+    # the score and return if this is not the case. It's possible that 'nv' is
+    # not assigned to any image
+    assigned_labels = np.unique(self._predicted_labels())
+    if not len(assigned_labels) == N_classes:
+      return
+
+    # If the function made it here, it means that the isic-challenge-scoring
+    # can be calculated without nan values or errors. This method uses a weight
+    # for each image, since these weights are unknown to the contestors, a
+    # weight value of 1.0 is used for each image.
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _evaluate_model(self):
@@ -92,7 +98,6 @@ class Score():
       self._truth_labels[i:j] = y.numpy()
       self._validation_scores[i:j, :] = model(x).cpu().detach().numpy()
       i = j
-
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _swap_single_label(self, current_label, new_label):
@@ -117,5 +122,9 @@ class Score():
 
     self._validation_scores[idx_img, current_score_idx] = max_score
     self._validation_scores[idx_img, max_score_idx]     = current_score
+
+  # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
+  def _predicted_labels(self):
+    return np.argmax(self._validation_scores, axis=1)
 
 
