@@ -55,6 +55,7 @@ def get_accuracy_test_ensemble(loader1,loader2, model1,model2,S):
         temp_list.append(model1.test_preds[i][3])
         temp_list.append(model1.test_preds[i][4])
         total_score.append(temp_list)
+  return total_score 
         
         
         
