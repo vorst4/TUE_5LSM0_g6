@@ -63,16 +63,19 @@ def dataloaders(root='/content/',
                                #T.RandomVerticalFlip(),
                                T.Resize((img_size,img_size)),  # todo: temporary fix
                                T.ToTensor(),
-                               T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                               T.Normalize((0.00036133, 0.00027880,  0.00027078),
+                                           (0.01646914, 0.01290044, 0.012730150))
                                ])
   transform_val =  T.Compose([T.Resize((img_size,img_size)),
                                T.ToTensor(),
-                               T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                               T.Normalize((0.00036133, 0.00027880,  0.00027078),
+                                           (0.01646914, 0.01290044, 0.012730150))
                                ])
 
   transform_test  = T.Compose([T.Resize((img_size,img_size)),
                                T.ToTensor(),
-                               T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                               T.Normalize((0.00036133, 0.00027880,  0.00027078),
+                                           (0.01646914, 0.01290044, 0.012730150))
                                ])
 
   # datasets
@@ -110,7 +113,7 @@ def dataloaders(root='/content/',
   dl_val = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val)
   dl_test = DataLoader(dataset_test, batch_size=batch_size)
 
-  normalize_data(dl_train)
+  # normalize_data(dl_train)
 
   # add bool to see if certain dataset is the training dataset
   dl_train.dataset.train = True

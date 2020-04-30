@@ -26,77 +26,32 @@ def normalize_data(dl_train):
 
   mean = torch.zeros(3)
   std = torch.zeros(3)
-  n_samples = 0
-  x_sum = torch.zeros(3)
+  n_imgs = 0
 
+  print('---------')
+  
+  # add all the imgs up and count the number of imgs
   for t, (x, y) in enumerate(dl_train):
-    x = x.to(device=S.device, dtype=S.dtype)  # move to device, e.g. GPU
-    batch, _, h, w = x.shape
-    n_samples += batch
-    n_pixels = batch*h*w
+    n_imgs += x.shape[0]
+    try:
+      x_sum += x
+      x_sum2 += x ** 2
+    except:
+      x_sum = x
+      x_sum2 = x ** 2
 
-    if t % 100 == 0:
-      print('t=')
-      print(t)
-    
+    print('n_imgs = ', n_imgs)
 
-    x_sum += x.sum([0, 2, 3])
+  # total number of pixels (n_imgs * width * height)
+  n_pixels = n_imgs * x_sum.shape[2] * x_sum.shape[3]
 
-  print(t)
-  print(n_samples)
+  # calculate mean and std for each rgb
+  mean = x_sum.sum([0, 2, 3]) / n_pixels
+  std = np.sqrt( x_sum2.sum([0, 2, 3])/n_pixels - mean**2 )
 
-  asdf()
-
-  #   asdf()
-  #   mean += x.mean
-
-  #   tmp1 = torch.sum(data, dim=[0, 2, 3])
-  #   fst_moment = (cnt * mean + sum_) / (cnt + nb_pixels)
-  #   # tmp2 = 
-  #   print(x.shape)
-  #   print(val.shape)
-
-
-  #   asdf()
-
-
-  #   mean = 0.
-  #   std = 0.
-  #   nb_samples = 0.
-  #   for data in loader:
-  #       batch_samples = data.size(0)
-  #       data = data.view(batch_samples, data.size(1), -1)
-  #       mean += data.mean(2).sum(0)
-  #       std += data.std(2).sum(0)
-  #       nb_samples += batch_samples
-
-  #   mean /= nb_samples
-  #   std /= nb_samples
-
-
-  #   for data in data_loader:
-
-  #       b, c, h, w = data.shape
-  #       nb_pixels = b * h * w
-  #       sum_ = torch.sum(data, dim=[0, 2, 3])
-  #       sum_of_square = torch.sum(data ** 2, dim=[0, 2, 3])
-  #       fst_moment = (cnt * mean + sum_) / (cnt + nb_pixels)
-  #       snd_moment = (cnt * std + sum_of_square) / (cnt + nb_pixels)
-
-  #       cnt += nb_pixels
-
-  #   return mean, torch.sqrt(std - mean ** 2)
-
-
-  # print(dl_test.sampler)
-
-  # print(len(dl_test.targets))
-
-  # print(dl_test.dataset)
-  # mean = np.mean(dataset_train)
-  # std = np.std(dataset_train)
-
-  # print(mean)
-  # print(std)
-
-  asdf()
+  # convert tensor to numpy array
+  mean = mean.numpy()
+  std = std.numpy()
+  
+  print('mean = ', mean)
+  print('std = ', std)
