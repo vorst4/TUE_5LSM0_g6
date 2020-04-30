@@ -103,7 +103,7 @@ def dataloaders(root='/content/',
       idxs_val1 = np.concatenate([idxs_val1, idxs1[N_train1:]])
 
 
-  datasplit2=[1,2,4,5]
+  datasplit2=[1,2,4,5,8]
   for i2 in range(4):
    # indices of class <i>
    idxs2 = np.where(np.array(dataset_train.targets) == datasplit2[i2])[0]
