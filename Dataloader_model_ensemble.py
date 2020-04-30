@@ -88,8 +88,8 @@ def dataloaders(root='/content/',
   val_ratio = 0.1
   N_classes = 9
 
-  datasplit1=[0,1,2,4]
-  for i in range(4):
+  datasplit1=[0,3,6,7,8]
+  for i in range(5):
     # indices of class <i>
     idxs1 = np.where(np.array(dataset_train.targets) == datasplit1[i])[0]
     # determine the number of (new) training samples
@@ -97,13 +97,13 @@ def dataloaders(root='/content/',
     # split the (old) training set into (new) training and validation set
     if i==0:
       idxs_train1 = idxs1[:N_train1]
-      idxs_val = idxs1[N_train1:]
+      idxs_val1 = idxs1[N_train1:]
     else:
       idxs_train1 = np.concatenate([idxs_train1, idxs1[:N_train1]])
-      idxs_val = np.concatenate([idxs_val, idxs1[N_train1:]])
+      idxs_val1 = np.concatenate([idxs_val1, idxs1[N_train1:]])
 
 
-  datasplit2=[3,5,6,7]
+  datasplit2=[1,2,4,5]
   for i2 in range(4):
    # indices of class <i>
    idxs2 = np.where(np.array(dataset_train.targets) == datasplit2[i2])[0]
@@ -111,17 +111,17 @@ def dataloaders(root='/content/',
    N_train2 = int(np.round(len(idxs2)*(1-val_ratio)))
    # split the (old) training set into (new) training and validation set
    if i2==0:
-     idxs_train2 = idxs[:N_train2]
-     idxs_val = np.concatenate([idxs_val, idxs2[N_train2:]])
+     idxs_train2 = idxs2[:N_train2]
+     idxs_val2 = idxs2[N_train1:]
    else:
      idxs_train2 = np.concatenate([idxs_train2, idxs2[:N_train2]])
-     idxs_val = np.concatenate([idxs_val, idxs2[N_train2:]])
+     idxs_val2 = np.concatenate([idxs_val2, idxs2[N_train2:]])
 
   # samplers
   sampler_train1 = sampler.SubsetRandomSampler(idxs_train1)
   sampler_train2 = sampler.SubsetRandomSampler(idxs_train2)
-
-  sampler_val = sampler.SubsetRandomSampler(idxs_val)
+  sampler_val1 = sampler.SubsetRandomSampler(idxs_val1)
+  sampler_val2 = sampler.SubsetRandomSampler(idxs_val2)
   # print(len(idxs_train))
   # print(len(idxs_val))
 
@@ -129,15 +129,18 @@ def dataloaders(root='/content/',
   dl_train1 = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train1)
   dl_train2 = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train2)
   
-  dl_val = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val)
+  dl_val1 = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val1)
+  dl_val2 = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val2)
 
   dl_test = DataLoader(dataset_test, batch_size=batch_size)
 
   # normalize_data(dl_train)
 
   # add bool to see if certain dataset is the training dataset
-  dl_train.dataset.train = True
-  dl_val.dataset.train = False
+  dl_train1.dataset.train = True
+  dl_val1.dataset.train = False
+  dl_train2.dataset.train = True
+  dl_val2.dataset.train = False
   dl_test.dataset.train = False
 
-  return dl_train1, dl_train2, dl_val, dl_test
+  return dl_train1, dl_train2, dl_val1,dl_val2, dl_test
