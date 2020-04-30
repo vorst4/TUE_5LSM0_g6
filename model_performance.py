@@ -43,5 +43,5 @@ def model_performance(S, model_params, dl_val, N_val, N_classes):
     i = j
 
   # return
-  return y_true, scores
+  return y_true.numpy(), scores.numpy()
 
