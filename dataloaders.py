@@ -20,12 +20,15 @@ from glob import glob
 from datetime import datetime
 from PIL import Image
 
+import normalize_data
+importlib.reload(normalize_data)
+normalize_data = normalize_data.normalize_data
+
 
 def dataloaders(root='/content/',
                 train_img_dir='ISIC_2019_Training_Input/',
                 test_img_dir='ISIC_2019_Test_Input/',
                 batch_size=64,
-                val_ratio = 5,
                 img_size=64):
   """
   This function creates and returns dataloaders for the train, validation and 
@@ -77,19 +80,16 @@ def dataloaders(root='/content/',
   dataset_val = dset.ImageFolder(root+train_img_dir, transform=transform_val)
   dataset_test = dset.ImageFolder(root+test_img_dir, transform=transform_test)
 
-  # use <val_ratio> percent of the training data as validation, use the 
-  # remaining data as the new training data. Also, take an equal ratio of each
-  # class. Reason is that there are classes with very few images, by not taking
-  # an equal percentage of each class its possible that some classes are left
-  # entirely out of the validation set.
+  # split the (old) training data into (new) training data (90%) and test 
+  # data (10%). The split is done per class, the first 90% is taken for the
+  # (new) training data en de last 10% for the validation data.
+  val_ratio = 0.1
   N_classes = 9
   for i in range(N_classes):
     # indices of class <i>
     idxs = np.where(np.array(dataset_train.targets) == i)[0]
-    # shuffle them
-    np.random.shuffle(idxs)
     # determine the number of (new) training samples
-    N_train = int(np.round(len(idxs)*(100-val_ratio)/100))
+    N_train = int(np.round(len(idxs)*(1-val_ratio)))
     # split the (old) training set into (new) training and validation set
     if i==0:
       idxs_train = idxs[:N_train]
@@ -102,10 +102,15 @@ def dataloaders(root='/content/',
   sampler_train = sampler.SubsetRandomSampler(idxs_train)
   sampler_val = sampler.SubsetRandomSampler(idxs_val)
 
+  # print(len(idxs_train))
+  # print(len(idxs_val))
+
   # dataloaders
   dl_train = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train)
   dl_val = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val)
   dl_test = DataLoader(dataset_test, batch_size=batch_size)
+
+  normalize_data(dl_train)
 
   # add bool to see if certain dataset is the training dataset
   dl_train.dataset.train = True

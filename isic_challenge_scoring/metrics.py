@@ -36,7 +36,10 @@ def _label_balanced_multiclass_accuracy(
     # the definitions mentioned by SciKit learn, as it's just a normalization of TP scores by true
     # class proportions
     confusion_matrix = sklearn.metrics.confusion_matrix(
-        truth_labels, prediction_labels, labels=categories, sample_weight=weights
+        truth_labels, 
+        prediction_labels, 
+        labels=categories, 
+        sample_weight=weights.values.reshape(-1)
     )
     # TODO: try to convert to a DataFrame, for useful debugging labels
     # confusion_matrix = pd.DataFrame(
