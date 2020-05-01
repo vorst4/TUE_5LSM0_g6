@@ -23,12 +23,7 @@ import TUE_5LSM0_g6.backup
 importlib.reload(TUE_5LSM0_g6.backup)
 backup = TUE_5LSM0_g6.backup.backup
 
-# global variables
-time_start = 0
-epoch = 0
-tot_epochs = 0
-iteration = 0
-prints_per_epoch, cur_print = 0,0
+# constants
 N_classes = 9
 N_train = 22799
 N_val = 2532
@@ -37,154 +32,140 @@ N_test = 8238
 
 # ---------------------------------------------------------------------------- #
 
-def train(model, optimizer, dataloader, dl_val, lr_exp, S):
-  """
-  Trains the specified model and prints the progress
+class Train():
   
-  Args:
-    model (torch.nn.Module):  model
-    optimizer (torch.optim.Optimizer): optimizer
-    epochs (int): number of epochs to train the model
+  def init(self, model, model_data, optimizer, dataloader, dl_val, lr_exp, S):
+    """
+    Trains the specified model and prints the progress
+    
+    Args:
+      model (torch.nn.Module):  model
+      optimizer (torch.optim.Optimizer): optimizer
+      epochs (int): number of epochs to train the model
 
-  Returns:
-    (none)
-  """
+    Returns:
+      (none)
+    """
 
-  global time_start, epoch, tot_epochs, iteration, prints_per_epoch, cur_print
+    # sanity check
+    if not isinstance(model, torch.nn.Module):
+      raise TypeError('model must be of type torch.nn.Module')
+    if not isinstance(model_data, dict):
+      raise InstanceError('model_data needs to be a dictionary')
 
-  # add attributes to model, if they do not exist yet
-  if not hasattr(model, 'loss'):
-    model.loss = []
-  if not hasattr(model, 'time_elapsed'):
-    model.time_elapsed = []
-  if not hasattr(model, 'validation_score'):
-    model.validation_score = Score(model)
+    # create validation score object
+    val_score = Score(model)
 
-  # variables
-  if not len(model.validation_score.epoch) == 0
-    epochs = model.validation_score.epoch[-1] + 1 + np.arange(S.epochs)
-    iteration = model.validation_score.iteration[-1]
-  else
-    epochs = 1 + np.arange(S.epochs)
-    iteration = 0
-  iter_per_epoch = int( np.ceil( N_train / S.batch_size  ) )
-  prints_per_epoch = iter_per_epoch // S.evaluate_every
-  tot_epochs = epochs[-1]
+    # add keys to dictionary if its empty and restore val-score otherwise.
+    if not model_data:
+      model_data['loss'] = []
+      model_data['time_elapsed'] = []
+      model_data['validation_score'] = []
+    else:
+      val_score.restore(model_data['validation_score'])
 
-  # move model to cpu/gpu
-  model = model.to(device=S.device)  # move the model parameters to CPU/GPU
+    
+    # set class attributes
+    if not len(model.validation_score.epoch) == 0
+      self.epochs = model.validation_score.epoch[-1] + 1 + np.arange(S.epochs)
+      self.iteration = model.validation_score.iteration[-1]
+    else
+      self.epochs = 1 + np.arange(S.epochs)
+      self.iteration = 0
+    self.iter_per_epoch = int( np.ceil( N_train / S.batch_size  ) )
+    self.prints_per_epoch = selfiter_per_epoch // S.evaluate_every
+    self.epoch_end = epochs[-1]
+    self.iteration_start = self.iteration
+    self.iteration_end = self.epoch_end * self.iter_per_epoch
 
-  # start timer
-  time_start = time.clock()
+    # move model to cpu/gpu
+    model = model.to(device=S.device)  # move the model parameters to CPU/GPU
 
-  # start (or resume) training
-  print('\nEstimated number of iterations per epoch: %i\n' % iter_per_epoch)
-  for e in epochs:
-    cur_print = 0
-    for t, (x, y) in enumerate(dataloader):
+    # start timer
+    self.time_start = time.clock()
 
-      # update current iteration and epoch
-      iteration += 1
-      epoch = e
+    # start (or resume) training
+    print('\nEstimated number of iterations per epoch: %i\n' % self.iter_per_epoch)
+    for e in epochs:
+      self.cur_print = 0
+      for t, (x, y) in enumerate(dataloader):
 
-      # put model to training mode and move (x,y) to cpu/gpu
-      model.train()  
-      x = x.to(device=S.device, dtype=S.dtype)
-      y = y.to(device=S.device, dtype=torch.long)
+        # update current iteration and epoch
+        self.iteration += 1
+        self.epoch = e
 
-      # calculate scores
-      scores = model(x)
+        # put model to training mode and move (x,y) to cpu/gpu
+        model.train()  
+        x = x.to(device=S.device, dtype=S.dtype)
+        y = y.to(device=S.device, dtype=torch.long)
 
-      # calculate loss(cross etnropy)
-      loss = F.cross_entropy(scores, y)
-      
-      # Zero out all of the gradients for the variables which the optimizer
-      # will update.
-      optimizer.zero_grad()
+        # calculate scores
+        scores = model(x)
 
-      # backward pass, compute loss gradient
-      loss.backward()
+        # calculate loss(cross etnropy)
+        loss = F.cross_entropy(scores, y)
+        
+        # Zero out all of the gradients for the variables which the optimizer
+        # will update.
+        optimizer.zero_grad()
 
-      # update parameters using gradients
-      optimizer.step()
-      
-      # evaluate model on validation data and print (part of) the results.
-      if t % S.evaluate_every == 0:
-        cur_print += 1
-        _evaluate_and_print(model, time_start)
+        # backward pass, compute loss gradient
+        loss.backward()
+
+        # update parameters using gradients
+        optimizer.step()
+        
+        # evaluate model on validation data and print (part of) the results.
+        if t % S.evaluate_every == 0:
+          self.cur_print += 1
+          self._evaluate_and_print(model, time_start, loss)
 
 
-      # append loss 
-      model.loss.append(loss)
+        # append loss 
+        model.loss.append(loss)
 
-    lr_exp.step()
-    print(lr_exp.get_lr())
+      # bakcup model (if required)
+      if S.backup_each_epoch:
+        backup2(model)
 
+      # update learning rate
+      lr_exp.step()
+      print('\n new lr = ', lr_exp.get_lr())
+
+
+  # ---------------------------------------------------------------------------- #
+  def _evaluate_and_print(model, time_start, loss):
+
+    # evaluate (bma: balanced multiclass accuracy)
+    bma, tp, p = model.score.calculate(self.epoch, self.iteration)
+    t_elap = time.clock() - self.time_start
+    t_per_iter = t_elap / (self.iteration - self.iteration_start)
+    t_rem = (self.iteration_end - self.iteration) * t_per_iter
+
+    # print
+    #   line 1
+    var1 = 'Epoch %i/%i ' % (self.epoch, self.epoch_end)
+    var2 = 'print %i/%i ' % (self.cur_print, self.prints_per_epoch)
+    var3 = 't_elaps.%s t_rem.%s ' %  (time_str(t_elap), time_str(t_rem))
+    var4 = 'loss %.4f ' % loss.item()
+    var5 = 'bma %.2f ' % bma
+    line1 = var1 + var2 + var3 + var4 + var5
+    #   line 2 and 3
+    line23 = '\t'
+    label_names = dataloader.dataset.classes
+    for label in range(N_classes):
+      if label==4: # add line break
+        line23 += '\n\t'
+      elif ii==7: # skip class 'unk'
+        continue
+      line23 += '%-4s %5i/%-8i ' % (label_names[label] , tp[label], p[label] )
+    #   print them
+    print( line1 + line23 )
 
 # ---------------------------------------------------------------------------- #
-def _evaluate_and_print(model, time_start):
-
-  # evaluate (bma: balanced multiclass accuracy)
-  bma, tp, p = model.score.calculate(epoch, iteration)
-  
-
-  # print
-  var1 = 'Epoch %i/%i' % (epoch, tot_epochs)
-  var2 = 'print %i/%i' % (cur_print, prints_per_epoch)
-  var3 = 't_elaps.%s' % time_str(t_elap)
-
-  print('Epoch %i/%i, iter %i/%i, t_elaps.%s t_rem.%s, %' % \
-        (epoch, tot_epochs, t, N_iter, time_str(t_elap), time_str(t_rem) ) )  
-
-  # backup
-  
-  str2 = 'loss %.4f %s ' % (loss.item(), accuracy(dl_val, model, S) )
-  print(str1+str2)
-
-    model.elapsed_time = time_str(time.clock()-time_start)
-    if S.backup_each_epoch:
-      backup(model, S.modelname)
-
-
 def time_str(t):
   return time.strftime('%Hh%Mm%Ss', time.gmtime(t))
 
 # ---------------------------------------------------------------------------- #
 
-def accuracy(dataloader, model, S):
-  """
-  Calculate accuracy of given model
-  """
-  num_correct = 0
-  num_samples = 0
-  ncc = np.zeros(9)
-  nsc = np.zeros(9)
-  classes = dataloader.dataset.classes
-  model.eval()  # set model to evaluation mode
-  with torch.no_grad():
-    for x, y in dataloader:
-      x = x.to(device=S.device, dtype=S.dtype)  # move to device, e.g. GPU
-      y = y.to(device=S.device, dtype=torch.long)
-      scores = model(x)
-      _, preds = scores.max(1)
-      num_correct += (preds == y).sum()
-      num_samples += preds.size(0)
-      for ii in range(9):
-        ncc[ii] += ( (preds == ii) & (y==ii)).sum()
-        nsc[ii] += (y==ii).sum()
-    acc = float(num_correct) / num_samples
-    if dataloader.dataset.train:
-      model.acc_test.append(acc)
-    else:
-      model.acc_val.append(acc)
 
-    str1 = 'acc %.2f%% (%i/%i)\n' % (100 * acc, num_correct, num_samples)
-    str2 = '\t'
-    for ii in range(9):
-      if ii==4: # add line break
-        str2 = str2+'\n\t'
-      elif ii==7: # skip class 'unk'
-        continue
-      str2 = str2 + '%-4s %5i/%-8i ' % (classes[ii], ncc[ii], nsc[ii])
-    return str1+str2
-  
