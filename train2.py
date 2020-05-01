@@ -62,7 +62,7 @@ class Train():
       model_data['loss'] = []
       model_data['validation_score'] = []
     else:
-      val_score.restore(model_data['validation_score'])
+      val_score.from_dict(model_data['validation_score'])
 
 
     # set class attributes
