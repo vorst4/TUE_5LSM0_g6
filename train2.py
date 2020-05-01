@@ -55,6 +55,7 @@ class Train():
 
     # get validation score object
     val_score = hyperparam.score
+    self.hyperparam = hyperparam
 
     # add keys to dictionary if its empty. If not, restore val-score object
     if not model_data:
@@ -143,19 +144,19 @@ class Train():
 
     # print
     #   line 1
-    var1 = 'Epoch %i/%i ' % (self.epoch, self.epoch_end)
-    var2 = 'print %i/%i ' % (self.cur_print, self.prints_per_epoch)
-    var3 = 't_elaps.%s t_rem.%s ' %  (time_str(t_elap), time_str(t_rem))
-    var4 = 'loss %.4f ' % loss.item()
-    var5 = 'bma %.2f ' % bma
-    line1 = var1 + var2 + var3 + var4 + var5
+    var1 = 'Epoch %i/%i  ' % (self.epoch, self.epoch_end)
+    var2 = 'print %i/%i  ' % (self.cur_print, self.prints_per_epoch)
+    var3 = 't_elaps.%s  t_rem.%s  ' %  (time_str(t_elap), time_str(t_rem))
+    var4 = 'loss %.4f  ' % loss.item()
+    var5 = 'bma %.2f  ' % bma
+    line1 = var1 + var2 + var3 + var4 + var5 + '\n'
     #   line 2 and 3
-    line23 = '\t'
-    label_names = dataloader.dataset.classes
+    line23 = '    '
+    label_names = self.hyperparam.dl_train.dataset.classes
     for label in range(N_classes):
       if label==4: # add line break
-        line23 += '\n\t'
-      elif ii==7: # skip class 'unk'
+        line23 += '\n    '
+      elif label==7: # skip class 'unk'
         continue
       line23 += '%-4s %5i/%-8i ' % (label_names[label] , tp[label], p[label] )
     #   print them
