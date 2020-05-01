@@ -20,7 +20,7 @@ from datetime import datetime
 from PIL import Image
 
 
-def backup(model, 
+def backup2(model, 
            modelname,
            model_path='/content/drive/My Drive/5LSM0-final-assignment/' ):
 

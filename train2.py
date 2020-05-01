@@ -19,9 +19,9 @@ from datetime import datetime
 from PIL import Image
 
 # import backup
-import TUE_5LSM0_g6.backup
-importlib.reload(TUE_5LSM0_g6.backup)
-backup = TUE_5LSM0_g6.backup.backup
+import TUE_5LSM0_g6.backup2
+importlib.reload(TUE_5LSM0_g6.backup2)
+backup2 = TUE_5LSM0_g6.backup2.backup2
 
 # constants
 N_classes = 9
@@ -34,7 +34,7 @@ N_test = 8238
 
 class Train():
   
-  def init(self, model, model_data, optimizer, dataloader, dl_val, lr_exp, S):
+  def __init__(self, model, hyperparam, model_data, S):
     """
     Trains the specified model and prints the progress
     
@@ -53,8 +53,8 @@ class Train():
     if not isinstance(model_data, dict):
       raise InstanceError('model_data needs to be a dictionary')
 
-    # create validation score object
-    val_score = Score(model)
+    # get validation score object
+    val_score = hyperparam.score
 
     # add keys to dictionary if its empty. If not, restore val-score object
     if not model_data:
@@ -63,16 +63,16 @@ class Train():
     else:
       val_score.restore(model_data['validation_score'])
 
-    
+
     # set class attributes
-    if not len(val_score.epoch) == 0
-      self.epochs = val_score.epoch[-1] + 1 + np.arange(S.epochs)
+    if not len(val_score.epoch) == 0:
+      epochs = val_score.epoch[-1] + 1 + np.arange(S.epochs)
       self.iteration = val_score.iteration[-1]
-    else
-      self.epochs = 1 + np.arange(S.epochs)
+    else:
+      epochs = 1 + np.arange(S.epochs)
       self.iteration = 0
     self.iter_per_epoch = int( np.ceil( N_train / S.batch_size  ) )
-    self.prints_per_epoch = selfiter_per_epoch // S.evaluate_every
+    self.prints_per_epoch = self.iter_per_epoch // S.evaluate_every
     self.epoch_end = epochs[-1]
     self.iteration_start = self.iteration
     self.iteration_end = self.epoch_end * self.iter_per_epoch
@@ -87,7 +87,7 @@ class Train():
     print('\nEstimated number of iterations per epoch: %i\n' % self.iter_per_epoch)
     for e in epochs:
       self.cur_print = 0
-      for t, (x, y) in enumerate(dataloader):
+      for t, (x, y) in enumerate(hyperparam.dl_train):
 
         # update current iteration and epoch
         self.iteration += 1
@@ -106,18 +106,18 @@ class Train():
         
         # Zero out all of the gradients for the variables which the optimizer
         # will update.
-        optimizer.zero_grad()
+        hyperparam.optimizer.zero_grad()
 
         # backward pass, compute loss gradient
         loss.backward()
 
         # update parameters using gradients
-        optimizer.step()
+        hyperparam.optimizer.step()
         
         # evaluate model on validation data and print (part of) the results.
         if t % S.evaluate_every == 0:
           self.cur_print += 1
-          self._evaluate_and_print(model, time_start, loss)
+          self._evaluate_and_print(model, val_score, loss)
 
         # append loss 
         model_data['loss'].append(loss)
@@ -133,10 +133,10 @@ class Train():
 
 
   # ---------------------------------------------------------------------------- #
-  def _evaluate_and_print(model, time_start, loss):
+  def _evaluate_and_print(self, model, score, loss):
 
     # evaluate (bma: balanced multiclass accuracy)
-    bma, tp, p = model.score.calculate(self.epoch, self.iteration)
+    bma, tp, p = score.calculate(int(self.epoch), int(self.iteration))
     t_elap = time.clock() - self.time_start
     t_per_iter = t_elap / (self.iteration - self.iteration_start)
     t_rem = (self.iteration_end - self.iteration) * t_per_iter

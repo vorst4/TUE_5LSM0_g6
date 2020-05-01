@@ -15,7 +15,7 @@ N_val = 2532
 class Score():
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
-  def __init__(self, model):
+  def __init__(self, model, hyperparam):
     """
     Calculate the performance (score) of the model on the validation set. The 
     provided model must have attribute 'dl_val' containing the validation
@@ -36,14 +36,14 @@ class Score():
     # sanity-check arguments
     if not isinstance(model, torch.nn.Module):
       raise TypeError('model must be of type torch.nn.Module')
-    if not hasattr(model, 'dl_val'):
-      raise AttributeError('model must have attribute dl_val')
-    if not isinstance(model.dl_val, torch.utils.data.DataLoader):
+    if not hasattr(hyperparam, 'dl_val'):
+      raise AttributeError('hyperparam must have attribute dl_val')
+    if not isinstance(hyperparam.dl_val, torch.utils.data.DataLoader):
       raise TypeError('dl_val must be of type torch.utils.data.DataLoader')
 
     # set attributes
     self._model = model
-    self._dl_val = model.dl_val
+    self._dl_val = hyperparam.dl_val
     self._truth_labels = -np.ones((N_val))
     self._predicted_labels = -np.ones((N_val))
     self._validation_scores = np.zeros((N_val, N_classes))
@@ -79,14 +79,16 @@ class Score():
     """
 
     # sanity-check arguments
-    if not type(epoch) is int:
-      raise TypeError('Epoch must be of type int')
-    if not type(iteration) is int:
-      raise TypeError('Iteration must be of type int')
-    if epoch < self.epoch[-1]
-      raise ValueError('epoch %i is given, but last epoch was %i' % (epoch, self.epoch[-1]))
-    if iteration <= self.iteration[-1]
-      raise ValueError('iteration %i is given, but last iteration was %i. Note, iteration is total number of iterations not iteration per epoch' % (iteration, self.iteration[-1]))
+    if not isinstance(epoch, int):
+      raise TypeError('Epoch must be of type int but %s is given' % type(epoch).__name__)
+    if not isinstance(iteration, int):
+      raise TypeError('Iteration must be of type int but %s is given' % type(iteration).__name__)
+    if not len(self.epoch) == 0:
+      if epoch < self.epoch[-1]:
+        raise ValueError('epoch %i is given, but last epoch was %i' % (epoch, self.epoch[-1]))
+    if not len(self.iteration) == 0:
+      if iteration <= self.iteration[-1]:
+        raise ValueError('iteration %i is given, but last iteration was %i. Note, iteration is total number of iterations not iteration per epoch' % (iteration, self.iteration[-1]))
 
 
     # evaluate model on the validation set
@@ -133,10 +135,10 @@ class Score():
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def to_dict():
-    return = {'iteration': self.iteration,
-              'epoch': self.epoch,
-              'isic_score': self.isic_score,
-              'balanced_multiclass_accuracy': self.balanced_multiclass_accuracy}
+    return {'iteration': self.iteration,
+            'epoch': self.epoch,
+            'isic_score': self.isic_score,
+            'balanced_multiclass_accuracy': self.balanced_multiclass_accuracy}
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def from_dict(dic):
@@ -152,14 +154,14 @@ class Score():
     the truth labels.
     """
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    model.eval()
+    self._model.eval()
     i,j = 0,0
     with torch.no_grad():
       for x, y in self._dl_val:
         x = x.to(device=device, dtype=torch.float32)
         j += x.shape[0]
         self._truth_labels[i:j] = y.numpy()
-        self._validation_scores[i:j, :] = model(x).cpu().detach().numpy()
+        self._validation_scores[i:j, :] = self._model(x).cpu().detach().numpy()
         i = j
     self._determine_predicted_labels()
 
