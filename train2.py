@@ -56,19 +56,18 @@ class Train():
     # create validation score object
     val_score = Score(model)
 
-    # add keys to dictionary if its empty and restore val-score otherwise.
+    # add keys to dictionary if its empty. If not, restore val-score object
     if not model_data:
       model_data['loss'] = []
-      model_data['time_elapsed'] = []
       model_data['validation_score'] = []
     else:
       val_score.restore(model_data['validation_score'])
 
     
     # set class attributes
-    if not len(model.validation_score.epoch) == 0
-      self.epochs = model.validation_score.epoch[-1] + 1 + np.arange(S.epochs)
-      self.iteration = model.validation_score.iteration[-1]
+    if not len(val_score.epoch) == 0
+      self.epochs = val_score.epoch[-1] + 1 + np.arange(S.epochs)
+      self.iteration = val_score.iteration[-1]
     else
       self.epochs = 1 + np.arange(S.epochs)
       self.iteration = 0
@@ -120,13 +119,13 @@ class Train():
           self.cur_print += 1
           self._evaluate_and_print(model, time_start, loss)
 
-
         # append loss 
-        model.loss.append(loss)
+        model_data['loss'].append(loss)
 
       # bakcup model (if required)
       if S.backup_each_epoch:
-        backup2(model)
+        model_data['validation_score'] = val_score.to_dict()
+        backup2(model, model_data)
 
       # update learning rate
       lr_exp.step()

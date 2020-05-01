@@ -126,10 +126,24 @@ class Score():
     # append the score, iteration, epoch, etc. to this class
     self.epoch.append(epoch)
     self.iteration.append(iteration)
-    self.isic_score.append(isic_score)
-    self.balanced_multiclass_accuracy.append(isic_score.overall)
+    self.isic_score.append(isic_score.to_dict())
+    self.balanced_multiclass_accuracy.append(float(isic_score.overall))
 
     return self.balanced_multiclass_accuracy[-1], TP_class, P_class
+
+  # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
+  def to_dict():
+    return = {'iteration': self.iteration,
+              'epoch': self.epoch,
+              'isic_score': self.isic_score,
+              'balanced_multiclass_accuracy': self.balanced_multiclass_accuracy}
+
+  # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
+  def from_dict(dic):
+    self.iteration = dic['iteration']
+    self.epoch = dic['epoch']
+    self.isic_score = dic['isic_score']
+    self.balanced_multiclass_accuracy = dic['balanced_multiclass_accuracy']
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _evaluate_model(self):
