@@ -127,8 +127,9 @@ class Score():
     self.epoch.append(epoch)
     self.iteration.append(iteration)
     self.isic_score.append(isic_score)
+    self.balanced_multiclass_accuracy.append(isic_score.overall)
 
-    return balanced_multiclass_accuracy, TP_class, P_class
+    return self.balanced_multiclass_accuracy[-1], TP_class, P_class
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _evaluate_model(self):
@@ -139,12 +140,13 @@ class Score():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.eval()
     i,j = 0,0
-    for x, y in self._dl_val:
-      x = x.to(device=device, dtype=torch.float32)
-      j += x.shape[0]
-      self._truth_labels[i:j] = y.numpy()
-      self._validation_scores[i:j, :] = model(x).cpu().detach().numpy()
-      i = j
+    with torch.no_grad():
+      for x, y in self._dl_val:
+        x = x.to(device=device, dtype=torch.float32)
+        j += x.shape[0]
+        self._truth_labels[i:j] = y.numpy()
+        self._validation_scores[i:j, :] = model(x).cpu().detach().numpy()
+        i = j
     self._determine_predicted_labels()
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
