@@ -2,8 +2,15 @@
 import numpy as np
 import cv2
 from google.colab.patches import cv2_imshow
+from PIL import Image, ImageDraw, ImageFont
 
+N_classes = 9
 
+text_location = (5,5)
+text_color = (0,0,0)
+font_size = 30
+font_path = '/content/drive/My Drive/5LSM0-final-assignment/Arial.ttf'
+label_names = ['ak', 'bcc', 'bkl', 'df', 'mel', 'nv', 'scc', 'unk', 'vasc']
 
 # ---------------------------------------------------------------------------- #
 
@@ -17,6 +24,7 @@ def create_heatmaps(model, tensor_in, idx):
     be created.
   """
 
+
   # obtain image size from tensor
   img_size = tensor_in.shape[2]
 
@@ -25,11 +33,11 @@ def create_heatmaps(model, tensor_in, idx):
 
   # Obtain the last convolutional layer (before the dense layer).
   #   has size (batch_size, conv_planes, conv_kernel_size, conv_kernel_size)
-  last_features = model.extract_features(tensor_in)
+  last_features = model.extract_features(tensor_in).detach().numpy()
 
   # obtain feature <idx> of the batch.
   #   has size (conv_planes, conv_kernel_size, conv_kernel_size)
-  last_feature = last_features[idx].detach().numpy()
+  last_feature = last_features[idx]
 
   # Obtain the weights of the dense layer after the last conv layer
   #   Size (conv_planes, N_classes)
@@ -51,7 +59,15 @@ def create_heatmaps(model, tensor_in, idx):
     grey_img = cv2.resize(cam_tran[label],(img_size, img_size)) 
 
     # convert it to a 'heatmap' (img_size, img_size)
-    heatmaps[label, :, :, :] = cv2.applyColorMap(grey_img, cv2.COLORMAP_JET)
+    heatmap = cv2.applyColorMap(grey_img, cv2.COLORMAP_JET)
+
+    # draw label names on heatmap
+    heatmap_text = Image.fromarray(heatmap)
+    draw = ImageDraw.Draw(heatmap_text)
+    font = ImageFont.truetype(font=font_path, size=font_size)
+    draw.text(text_location, label_names[label], fill=text_color, font=font)
+    
+    heatmaps[label, :, :, :] = np.array(heatmap_text)
 
   # return input image and heatmap
   return img, heatmaps
@@ -88,7 +104,7 @@ def display_random_heatmap(model, dl_train):
   img_combi = combine_heatmaps_and_image(img, heatmaps)
 
   # print info and display image
-  print('Generated heatmap of random image. heatmap %i is the correct one' % truth_labels[0])
+  print('Generated heatmap of random image. heatmap %s is the correct one' % label_names[truth_labels[0]])
   cv2_imshow(img_combi)
 
 
