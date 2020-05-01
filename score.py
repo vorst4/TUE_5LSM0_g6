@@ -1,6 +1,7 @@
 
 import torch
 import sklearn
+import numpy as np
 import pandas as pd
 from isic_challenge_scoring.classification import ClassificationScore
 
@@ -14,31 +15,56 @@ N_val = 2532
 class Score():
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
-  def __init__(self, model, dl_val):
+  def __init__(self, model):
     """
-    Init
+    Calculate the performance (score) of the model on the validation set. The 
+    provided model must have attribute 'dl_val' containing the validation
+    dataloader.
+
+    attributes
+    iteration (list, int): list with the iteration at which the score was 
+      determined. Note that this must be the total amount of iterations, not 
+      the iteration of the current epoch.
+    epoch (list, int): epoch
+    isic_score (list, object ClassificationScore ): list with objects that are
+      created with the isic-challenge-scoring source code.
+    balanced_multiclass_accuracy (list, float): the only score that really 
+      matters.
+
     """
 
-    # sanity-check the type of each argument
-    if not isinstance(model, torch.nn.Model):
-      raise TypeError('model must be of type torch.nn.Model')
-    if not isinstance(dl_val, torch.utils.data.DataLoader):
+    # sanity-check arguments
+    if not isinstance(model, torch.nn.Module):
+      raise TypeError('model must be of type torch.nn.Module')
+    if not hasattr(model, 'dl_val'):
+      raise AttributeError('model must have attribute dl_val')
+    if not isinstance(model.dl_val, torch.utils.data.DataLoader):
       raise TypeError('dl_val must be of type torch.utils.data.DataLoader')
 
     # set attributes
     self._model = model
-    self._dl_val = dl_val
-    self._truth_labels = np.empty((N_val))
-    self._validation_scores = np.empty(N_val, N_classes)
+    self._dl_val = model.dl_val
+    self._truth_labels = -np.ones((N_val))
+    self._predicted_labels = -np.ones((N_val))
+    self._validation_scores = np.zeros((N_val, N_classes))
     self.iteration = []
     self.epoch = []
     self.isic_score = []
+    self.balanced_multiclass_accuracy = []
 
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def calculate(self, epoch, iteration):
     """
     Calculate the score of the model using the (crappy) isic-challenge-scoring.
+
+    returns
+    TP_class (np array, int, size: N_classes): the number of 
+      correctly labeled images per class. This is purely meant for printing
+      during training. It is overwritten each time method 'calculate' is called.
+    P_class (np array, int, size: N_classes): the number of 
+      labels per class of the validation set. This is also meant for printing
+      purposes during training and it remains the same.
 
     Note1: The isic-challenge-scoring will contain nan values if there eixsts a
     label that is not assigned to any image. 
@@ -52,30 +78,44 @@ class Score():
     to any image will be assigned to a single image that contains label 'nv'.
     """
 
-    # sanity-check type of argument
+    # sanity-check arguments
+    if not type(epoch) is int:
+      raise TypeError('Epoch must be of type int')
     if not type(iteration) is int:
       raise TypeError('Iteration must be of type int')
+    if epoch < self.epoch[-1]
+      raise ValueError('epoch %i is given, but last epoch was %i' % (epoch, self.epoch[-1]))
+    if iteration <= self.iteration[-1]
+      raise ValueError('iteration %i is given, but last iteration was %i. Note, iteration is total number of iterations not iteration per epoch' % (iteration, self.iteration[-1]))
+
 
     # evaluate model on the validation set
     self._evaluate_model()
 
+    # determine correctly labeled images (TP) and number of labels (P) per class
+    TP_class = -np.ones(N_classes)
+    P_class  = -np.ones(N_classes)
+    for label in range(N_classes):
+      pred = self._predicted_labels[label]
+      true = self._truth_labels[label]
+      TP_class[i] = sum(( label == pred ) & ( label == true ))
+      P_class[i]  = sum( label == true )
+
     # if a label exists that is not assigned to an image (such as 'unk') then 
     # assign it to an image with label 'nv' (biggest class). If no image of 'nv'
     # exists then the function will return and the score will not be calculated.
-    predicted_labels = self._predicted_labels()
+    # Since it is possible that every image with 'nv' is relabed, sanity-check
+    # that all the labels are assigned to an image. If not, simply return and
+    # not calculate the score.
     for label in range(N_classes):
       if not np.isin(predicted_labels, label):
         try:
           self._swap_single_label(5, i)
         except:
-          return
-
-    # check if label 0-8 is assigned to at least one image. Do not calculate
-    # the score and return if this is not the case. It's possible that 'nv' is
-    # not assigned to any image
-    assigned_labels = np.unique(self._predicted_labels())
+          return np.Nan, TP_class, P_class
+    # sanity-check if every label is assigned to at least one image
     if not len(assigned_labels) == N_classes:
-      return
+      return np.Nan, TP_class, P_class
 
     # if the method reaches till here, its possible to determine the 
     # isic-challinge-score
@@ -87,6 +127,8 @@ class Score():
     self.epoch.append(epoch)
     self.iteration.append(iteration)
     self.isic_score.append(isic_score)
+
+    return balanced_multiclass_accuracy, TP_class, P_class
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _evaluate_model(self):
@@ -103,6 +145,7 @@ class Score():
       self._truth_labels[i:j] = y.numpy()
       self._validation_scores[i:j, :] = model(x).cpu().detach().numpy()
       i = j
+    self._determine_predicted_labels()
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _swap_single_label(self, current_label, new_label):
@@ -114,7 +157,7 @@ class Score():
     """
 
     # get image-index of the first occurce of the current_label
-    idx_img = self._truth_labels == 7)[0]
+    idx_img = (self._truth_labels == 7)[0]
 
     # change the label the the new_label
     self._truth_labels[idx_img] = new_label
@@ -124,16 +167,18 @@ class Score():
     current_score     = np.max(self._validation_scores[idx_img, current_label])
     max_score         = np.max( self._validation_scores[idx_img, :] )
     max_score_idx     = np.argmax( self._validation_scores[idx_img, :] )
-
     self._validation_scores[idx_img, current_score_idx] = max_score
     self._validation_scores[idx_img, max_score_idx]     = current_score
 
+    # redetermine the predicted labels
+    self._determine_predicted_labels(self)
+
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
-  def _predicted_labels(self):
+  def _determine_predicted_labels(self):
     """
     returns the predicted labels as indices
     """
-    return np.argmax(self._validation_scores, axis=1)
+    self._predicted_labels = np.argmax(self._validation_scores, axis=1) 
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   @staticmethod
