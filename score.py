@@ -1,5 +1,6 @@
 
 import torch
+import sklearn
 import pandas as pd
 from isic_challenge_scoring.classification import ClassificationScore
 
@@ -30,14 +31,12 @@ class Score():
     self._dl_val = dl_val
     self._truth_labels = np.empty((N_val))
     self._validation_scores = np.empty(N_val, N_classes)
-    self._weights = pd.DataFrame()
-    self._weights.score_weight = np.ones(N_val)
-    self._weights.validation_weight = np.ones(N_val)
     self.iteration = []
+    self.epoch = []
 
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
-  def calculate(self, iteration):
+  def calculate(self, epoch, iteration):
     """
     Calculate the score of the model using the (crappy) isic-challenge-scoring.
 
@@ -78,10 +77,7 @@ class Score():
     if not len(assigned_labels) == N_classes:
       return
 
-    # If the function made it here, it means that the isic-challenge-scoring
-    # can be calculated without nan values or errors. This method uses a weight
-    # for each image, since these weights are unknown to the contestors, a
-    # weight value of 1.0 is used for each image.
+    isic_score = _calculate_isic_score():
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _evaluate_model(self):
@@ -127,4 +123,48 @@ class Score():
   def _predicted_labels(self):
     return np.argmax(self._validation_scores, axis=1)
 
+  def _calculate_isic_score():
+    """
+    The isic-challenge-scoring works with pandas.Dataframe. The scoring uses a
+    weight with each image, since the weights are unknown to the contestents 
+    they are set to 1.0. The format of the truth labels needs to be binary in
+    contrast to label-indices, which is what this project works with in general.
+    Also, the label-names are used in contrast to label-indices. Furthermore,
+    the prediction-scores need to be expressed as a percentage in the following 
+    form:
+                        1
+          ----------------------------
+          1  +  exp[- a ( score - b )]
 
+    with the constant a compensating for the mean and constant b setting the 
+    threshold such that the sensitivity (recall) is > 89%. 
+
+    TODO: implement a & b such that this is satisfied. They are currently set
+    to 1 and 0.5 respectively.
+    """
+
+    # define weights (are all set to 1.0)
+    ones = np.ones(N_val, type=np.float64)
+    self._weights = pd.DataFrame({'score_weight': ones, 
+                                  'validation_weight': ones })
+
+    # label names (list of strings)
+    label_names = dl_val.dataset.classes
+
+    # binary truth labels (shape N_val x N_classes)
+    binary_truth_labels = sklearn.preprocessing.LabelBinarizer()
+
+    # binary truth labels as panda.DataFrame
+    binary_truth_labels_pd = pd.DataFrame(binary_truth_labels, 
+                                          columns=label_names)
+
+    # validation percentage
+    a = 1
+    b = 0.5
+    validation_percentage = 1/(1+np.exp(-a*(self._validation_scores - b)))
+    
+    # validation percentage as panda.DataFrame
+    validation_percentage_pd = pd.DataFrame(validation_percentage, 
+                                            columns=label_names)
+
+                                            
