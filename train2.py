@@ -129,8 +129,8 @@ class Train():
         backup2(model, model_data, S.modelname)
 
       # update learning rate
-      model_hyperparam.llr_exp.step()
-      print('\n new lr = ', model_hyperparam.llr_exp.get_lr())
+      hyperparam.lr_exp.step()
+      print('\n new lr = ', hyperparam.lr_exp.get_lr())
 
 
   # ---------------------------------------------------------------------------- #
