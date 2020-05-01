@@ -73,7 +73,7 @@ class Train():
       epochs = 1 + np.arange(S.epochs)
       self.iteration = 0
     self.iter_per_epoch = int( np.ceil( N_train / S.batch_size  ) )
-    self.prints_per_epoch = self.iter_per_epoch // S.evaluate_every
+    self.prints_per_epoch = int( np.ceil( self.iter_per_epoch / S.evaluate_every ) )
     self.epoch_end = epochs[-1]
     self.iteration_start = self.iteration
     self.iteration_end = self.epoch_end * self.iter_per_epoch
@@ -129,8 +129,8 @@ class Train():
         backup2(model, model_data, S.modelname)
 
       # update learning rate
-      lr_exp.step()
-      print('\n new lr = ', lr_exp.get_lr())
+      model_hyperparam.llr_exp.step()
+      print('\n new lr = ', model_hyperparam.llr_exp.get_lr())
 
 
   # ---------------------------------------------------------------------------- #

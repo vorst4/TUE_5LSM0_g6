@@ -18,6 +18,7 @@ from google.colab import drive
 from glob import glob
 from datetime import datetime
 from PIL import Image
+import pickle
 
 
 def backup2(model,
