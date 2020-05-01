@@ -31,7 +31,7 @@ class Score():
     balanced_multiclass_accuracy (list, float): the only score that really 
       matters.
 
-    """y
+    """
 
     # sanity-check arguments
     if not isinstance(model, torch.nn.Module):
