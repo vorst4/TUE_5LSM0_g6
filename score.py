@@ -4,7 +4,6 @@ import sklearn
 import pandas as pd
 from isic_challenge_scoring.classification import ClassificationScore
 
-
 # ---------------------------------------------------------------------------- #
 
 N_classes = 9
@@ -33,6 +32,7 @@ class Score():
     self._validation_scores = np.empty(N_val, N_classes)
     self.iteration = []
     self.epoch = []
+    self.isic_score = []
 
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
@@ -77,7 +77,16 @@ class Score():
     if not len(assigned_labels) == N_classes:
       return
 
-    isic_score = _calculate_isic_score():
+    # if the method reaches till here, its possible to determine the 
+    # isic-challinge-score
+    isic_score = self._calculate_isic_score(self._truth_labels, 
+                                            self._validation_scores, 
+                                            self._dl_val.datasets.classes)
+
+    # append the score, iteration, epoch, etc. to this class
+    self.epoch.append(epoch)
+    self.iteration.append(iteration)
+    self.isic_score.append(isic_score)
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _evaluate_model(self):
@@ -121,9 +130,14 @@ class Score():
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _predicted_labels(self):
+    """
+    returns the predicted labels as indices
+    """
     return np.argmax(self._validation_scores, axis=1)
 
-  def _calculate_isic_score():
+  # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
+  @staticmethod
+  def _calculate_isic_score(truth_labels, validation_scores, label_names):
     """
     The isic-challenge-scoring works with pandas.Dataframe. The scoring uses a
     weight with each image, since the weights are unknown to the contestents 
@@ -145,14 +159,11 @@ class Score():
 
     # define weights (are all set to 1.0)
     ones = np.ones(N_val, type=np.float64)
-    self._weights = pd.DataFrame({'score_weight': ones, 
-                                  'validation_weight': ones })
-
-    # label names (list of strings)
-    label_names = dl_val.dataset.classes
+    weights = pd.DataFrame({'score_weight': ones, 
+                            'validation_weight': ones })
 
     # binary truth labels (shape N_val x N_classes)
-    binary_truth_labels = sklearn.preprocessing.LabelBinarizer()
+    binary_truth_labels = sklearn.preprocessing.LabelBinarizer(truth_labels)
 
     # binary truth labels as panda.DataFrame
     binary_truth_labels_pd = pd.DataFrame(binary_truth_labels, 
@@ -161,10 +172,17 @@ class Score():
     # validation percentage
     a = 1
     b = 0.5
-    validation_percentage = 1/(1+np.exp(-a*(self._validation_scores - b)))
+    validation_percentage = 1/(1+np.exp(-a*(validation_scores - b)))
     
     # validation percentage as panda.DataFrame
     validation_percentage_pd = pd.DataFrame(validation_percentage, 
                                             columns=label_names)
 
-                                            
+    # calculate isic-score
+    isic_score = ClassificationScore( binary_truth_labels_pd,
+                                      validation_percentage_pd,
+                                      weights )
+
+    return isic_score
+
+
