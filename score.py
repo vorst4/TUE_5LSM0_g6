@@ -98,10 +98,10 @@ class Score():
     TP_class = -np.ones(N_classes)
     P_class  = -np.ones(N_classes)
     for label in range(N_classes):
-      pred = self._predicted_labels[label]
-      true = self._truth_labels[label]
-      TP_class[i] = sum(( label == pred ) & ( label == true ))
-      P_class[i]  = sum( label == true )
+      pred = self._predicted_labels
+      true = self._truth_labels
+      TP_class[label] = np.sum(( label == pred ) & ( label == true ))
+      P_class[label]  = np.sum( label == true )
 
     # if a label exists that is not assigned to an image (such as 'unk') then 
     # assign it to an image with label 'nv' (biggest class). If no image of 'nv'
@@ -110,20 +110,20 @@ class Score():
     # that all the labels are assigned to an image. If not, simply return and
     # not calculate the score.
     for label in range(N_classes):
-      if not np.isin(predicted_labels, label):
+      if np.sum( self._predicted_labels == label) == 0:
         try:
-          self._swap_single_label(5, i)
+          self._swap_single_label(5, label)
         except:
-          return np.Nan, TP_class, P_class
+          return np.nan, TP_class, P_class
     # sanity-check if every label is assigned to at least one image
-    if not len(assigned_labels) == N_classes:
-      return np.Nan, TP_class, P_class
+    if not len(np.unique(self._predicted_labels)) == N_classes:
+      return np.nan, TP_class, P_class
 
     # if the method reaches till here, its possible to determine the 
     # isic-challinge-score
     isic_score = self._calculate_isic_score(self._truth_labels, 
                                             self._validation_scores, 
-                                            self._dl_val.datasets.classes)
+                                            self._dl_val.dataset.classes)
 
     # append the score, iteration, epoch, etc. to this class
     self.epoch.append(epoch)
@@ -175,21 +175,19 @@ class Score():
     """
 
     # get image-index of the first occurce of the current_label
-    idx_img = (self._truth_labels == 7)[0]
+    idx_img = np.where( self._predicted_labels == current_label )[0][0]
 
     # change the label the the new_label
     self._truth_labels[idx_img] = new_label
 
-    # also change the validation_score such that it matches the new label
-    current_score_idx = current_label
-    current_score     = np.max(self._validation_scores[idx_img, current_label])
-    max_score         = np.max( self._validation_scores[idx_img, :] )
-    max_score_idx     = np.argmax( self._validation_scores[idx_img, :] )
-    self._validation_scores[idx_img, current_score_idx] = max_score
-    self._validation_scores[idx_img, max_score_idx]     = current_score
+    # swap validation scores
+    score_cur = self._validation_scores[idx_img, current_label]
+    score_new = self._validation_scores[idx_img, new_label]
+    self._validation_scores[idx_img, new_label]     = score_cur
+    self._validation_scores[idx_img, current_label] = score_new
 
     # redetermine the predicted labels
-    self._determine_predicted_labels(self)
+    self._determine_predicted_labels()
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
   def _determine_predicted_labels(self):
@@ -221,12 +219,14 @@ class Score():
     """
 
     # define weights (are all set to 1.0)
-    ones = np.ones(N_val, type=np.float64)
+    ones = np.ones(N_val, dtype=np.float64)
     weights = pd.DataFrame({'score_weight': ones, 
                             'validation_weight': ones })
 
-    # binary truth labels (shape N_val x N_classes)
-    binary_truth_labels = sklearn.preprocessing.LabelBinarizer(truth_labels)
+    # binary truth labels (shape N_val becomes shape N_val x N_classes)
+    binary_truth_labels = np.zeros((N_val, N_classes), dtype=np.float64)
+    for label in range(N_classes):
+      binary_truth_labels[truth_labels==label, label] = 1
 
     # binary truth labels as panda.DataFrame
     binary_truth_labels_pd = pd.DataFrame(binary_truth_labels, 
