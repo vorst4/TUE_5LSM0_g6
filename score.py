@@ -31,7 +31,7 @@ class Score():
     balanced_multiclass_accuracy (list, float): the only score that really 
       matters.
 
-    """
+    """y
 
     # sanity-check arguments
     if not isinstance(model, torch.nn.Module):
@@ -134,14 +134,14 @@ class Score():
     return self.balanced_multiclass_accuracy[-1], TP_class, P_class
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
-  def to_dict():
+  def to_dict(self):
     return {'iteration': self.iteration,
             'epoch': self.epoch,
             'isic_score': self.isic_score,
             'balanced_multiclass_accuracy': self.balanced_multiclass_accuracy}
 
   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .#
-  def from_dict(dic):
+  def from_dict(self, dic):
     self.iteration = dic['iteration']
     self.epoch = dic['epoch']
     self.isic_score = dic['isic_score']

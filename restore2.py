@@ -31,14 +31,14 @@ def restore2(model,
     if len(models) == 0:
       print('\nERROR: No models found with given modelname\n')
       print('\tpath: %s\n' % path)
-      return model
+      return model, {}
     path = models[-1]
   else:
     path = model_path+modelname+'_'+date_time+'.pt'
     if not os.path.exists(path):
       print('\nERROR: Path of provided modelname and date_time not found')
       print('\tpath: %s\n' % path)
-      return model
+      return model, {}
 
   # restore the model
   if torch.cuda.is_available():
@@ -50,5 +50,14 @@ def restore2(model,
     model.eval()
     print('\nWARNING: Using CPU !!!\nRestored model\n')
 
-  return model
+  # restore model_data
+  path2 = path.replace('.pt', '.pkl')
+  try:
+    with open(path2, 'rb') as f:
+      model_data = pickle.load(f)
+  except:
+    print('WARNING: could not restore model_data\n' )
+    model_data = {}
+
+  return model, model_data
   

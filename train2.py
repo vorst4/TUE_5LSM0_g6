@@ -125,7 +125,7 @@ class Train():
       # bakcup model (if required)
       if S.backup_each_epoch:
         model_data['validation_score'] = val_score.to_dict()
-        backup2(model, model_data)
+        backup2(model, model_data, S.modelname)
 
       # update learning rate
       lr_exp.step()
