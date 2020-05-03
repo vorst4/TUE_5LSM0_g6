@@ -23,7 +23,10 @@ from PIL import Image
 def backup(model, 
            modelname,
            model_path='/content/drive/My Drive/5LSM0-final-assignment/' ):
-
+  """
+  Function used to backup model, this is replaced by backup2.
+  """
+  print('WARNING: FUNCTION BACKUP IS USED, USE BACKUP2 INSTEAD !!!')
   date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
   path = model_path + modelname + '_' + date_time+'.pt'
   torch.save(model.state_dict(), path)

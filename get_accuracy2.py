@@ -1,4 +1,11 @@
+
+
 def get_accuracy(loader, model):
+  """
+  Function calculates accuracy but is not used any more.
+  """
+  print('WARNING: GET_ACCURACY IS USED, USE SCORE INSTEAD')
+  
   num_correct = 0
   num_samples = 0
   model.eval()  # set model to evaluation mode

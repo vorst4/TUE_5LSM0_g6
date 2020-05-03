@@ -6,12 +6,15 @@ from glob import glob
 
 
 N_classes = 9
-N_test = 8238
 header=["image","MEL","NV","BCC","AK","BKL","DF","VASC","SCC","UNK"]
 
 
 # ---------------------------------------------------------------------------- #
 def make_csv(model, dl_test, modelname, test_scores=None):
+  """
+  This function is used to generate test_scores and a csv file that can be
+  uploaded to the 2019 ISIC challenge.
+  """
 
   # get scores of the model on the test set
   if test_scores is None:
@@ -86,43 +89,12 @@ def make_csv(model, dl_test, modelname, test_scores=None):
   path = '/content/drive/My Drive/5LSM0-final-assignment/csv/' + modelname + '_test_scores_'+date_time+'.csv'
   print(path)
   
+  # write csv file
   with open(path, "w") as text_file:
     text_file.write(output)
 
   # done
   print('sucessfully generated .csv file')
-
-  # rows=[]
-  # test_im_names=[]
-  # test_imgs=sorted(glob(path+'*.jpg'))
-  # for test_im in test_imgs:
-  #   base_name = os.path.basename(test_im)
-  #   base_name=os.path.splitext(base_name)[0]
-  #   test_im_names.append(base_name)
-
-  
-
-  # rows.append(header)
-  # for i in range(len(test_im_names)):
-  #   scores_im=list(map(str,model.test_preds[i]))
-  #   score_sorted = []
-  #   score_sorted.append(scores_im[4])
-  #   score_sorted.append(scores_im[5])
-  #   score_sorted.append(scores_im[1])
-  #   score_sorted.append(scores_im[0])
-  #   score_sorted.append(scores_im[2])
-  #   score_sorted.append(scores_im[3])
-  #   score_sorted.append(scores_im[8])
-  #   score_sorted.append(scores_im[6])
-  #   score_sorted.append(scores_im[7])
-  #   new_row=[test_im_names[i]]+score_sorted
-  #   rows.append(new_row)
-
-  
-  # print(path)
-  # with open(path, 'w', newline='') as file:
-  #   writer = csv.writer(file)
-  #   writer.writerows(rows)
 
 
 # ---------------------------------------------------------------------------- #

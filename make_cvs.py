@@ -20,6 +20,10 @@ from PIL import Image
 
 
 def make_csv(model, path='/content/ISIC_2019_Test_Input/unk/'):
+  """
+  Second iteration of a function to make a csv file from the test-images scoring
+  """
+  print('WARNING: MAKE_CSV IS USED, USE FUNCTION MAKE_CSV2 INSTEAD')
   rows=[]
   test_im_names=[]
   test_imgs=sorted(glob(path+'*.jpg'))

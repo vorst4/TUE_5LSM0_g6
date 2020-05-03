@@ -24,6 +24,8 @@ def create_heatmaps(model, tensor_in, idx):
     be created.
   """
 
+  # make sure model is on cpu
+  model = model.cpu()
 
   # obtain image size from tensor
   img_size = tensor_in.shape[2]
@@ -33,7 +35,7 @@ def create_heatmaps(model, tensor_in, idx):
 
   # Obtain the last convolutional layer (before the dense layer).
   #   has size (batch_size, conv_planes, conv_kernel_size, conv_kernel_size)
-  last_features = model.extract_features(tensor_in).detach().numpy()
+  last_features = model.extract_features(tensor_in).detach().cpu().numpy()
 
   # obtain feature <idx> of the batch.
   #   has size (conv_planes, conv_kernel_size, conv_kernel_size)

@@ -38,6 +38,7 @@ def train(model, optimizer, dataloader, dl_val, lr_exp, S):
   Returns:
     (none)
   """
+  print('WARNING: FUNCTION TRAIN IS CALLED, USE THE NEW FUNCTION TRAIN2 INSTEAD')
   model = model.to(device=S.device)  # move the model parameters to CPU/GPU
   model.loss = []
   model.acc_val = []

@@ -39,18 +39,15 @@ def dataloaders(root='/content/',
     train_img_dir (str): directory containing images of the training set
     test_img_dir (str): directory that contains the images of the test set
     batch_size (int): batch size
-    validation_size_percentage (float, 0...100): the train data is split into train 
-      and valuation. This percentage specifies how much of the original data is 
-      used as validation. The remaining percentage will be the new train data.
+    img_size (int): desired image size.
   
   Returns: 
-    train (torch.utils.data.DataLoader): object to load training data
-    val (torch.utils.data.DataLoader): object to load validation data
-    test (torch.utils.data.DataLoader): object to load test data
-    N_train (int): number of training images
-    N_val (int): number of validation images
-    N_test (int): number of test images
+    dl_train (torch.utils.data.DataLoader): object to load training data
+    dl_val (torch.utils.data.DataLoader): object to load validation data
+    dl_test (torch.utils.data.DataLoader): object to load test data
   """
+
+  print('WARNING: FUNCTION DATALOADERS IS USED, USE THE NEW FUNCTION DATALOADERS_AUGMENTED INSTEAD')
 
   # dataset transformation. Expand the dataset by adding random horzontal and 
   # vertical flips. 

@@ -36,7 +36,8 @@ class Train():
   
   def __init__(self, model, hyperparam, model_data, S):
     """
-    Trains the specified model and prints the progress
+    Trains the specified model and prints the progress.
+    It also backups the progress and score if S.backup_each_epoch is set to true.
     
     Args:
       model (torch.nn.Module):  model
@@ -114,14 +115,14 @@ class Train():
 
         # update parameters using gradients
         hyperparam.optimizer.step()
+
+        # append loss 
+        model_data['loss'] = np.append( model_data['loss'], loss.item() )
         
         # evaluate model on validation data and print (part of) the results.
         if t % S.evaluate_every == 0:
           self.cur_print += 1
           self._evaluate_and_print(model, val_score, loss)
-
-        # append loss 
-        model_data['loss'].append(loss)
 
       # bakcup model (if required)
       if S.backup_each_epoch:
@@ -148,7 +149,7 @@ class Train():
     var2 = 'print %i/%i  ' % (self.cur_print, self.prints_per_epoch)
     var3 = 't_elaps.%s  t_rem.%s  ' %  (time_str(t_elap), time_str(t_rem))
     var4 = 'loss %.4f  ' % loss.item()
-    var5 = 'bma %.2f  ' % bma
+    var5 = 'bma %.3f  ' % bma
     line1 = var1 + var2 + var3 + var4 + var5 + '\n'
     #   line 2 and 3
     line23 = '    '

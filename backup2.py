@@ -25,7 +25,9 @@ def backup2(model,
             data,
             modelname,
             model_path='/content/drive/My Drive/5LSM0-final-assignment/' ):
-
+  """
+  Function used to backup model and the score obtain during training.
+  """
   date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
   path1 = model_path + modelname + '_' + date_time+'.pt'
   path2 = model_path + modelname + '_' + date_time+'.pkl'

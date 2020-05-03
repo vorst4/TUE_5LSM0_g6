@@ -24,6 +24,10 @@ def restore(model,
             modelname, 
             model_path='/content/drive/My Drive/5LSM0-final-assignment/',
             date_time=''):
+  """
+  This function is used to restore the model. It is replaced by restore2
+  """
+  print('WARNING: FUNCTION RESTORE IS CALLED, USE RESTORE2 INSTEAD THEY SHOULD BE COMPATIBLE')
   
   # construct path, if no date_time is given get most recent model
   if date_time == '':

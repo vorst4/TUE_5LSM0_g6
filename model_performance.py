@@ -10,6 +10,7 @@ def model_performance(S, model_params, dl_val, N_val, N_classes):
   Determines performance of provided model on the validation set.
   Returns the labels and scores
   """
+  print('WARNING: MODEL_PERFORMANCE IS USED, THIS FUNCTION SHOULD HAVE BECOME OBSOLETE')
 
   # # free gpu memory
   # if torch.cuda.is_available():

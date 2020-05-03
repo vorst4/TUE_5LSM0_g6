@@ -18,6 +18,7 @@ def normalize_data(dl_train):
     mean (tuple, 3 elements): mean per color (RGB)
     std (tuple, 3 elements): standerd deviation per color (RGB)
   """
+  print('WARNING: NORMALIZE_DATA IS CALLED, THESE VALUES ARE ALREADY HARDCODED INTO THE DATALOADERS FUNCTION')
 
   dataset_train = dl_train.dataset
 
